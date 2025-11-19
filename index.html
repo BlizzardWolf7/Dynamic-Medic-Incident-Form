@@ -3,228 +3,40 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#2563eb">
+<link rel="manifest" href="manifest.json">
 <title>Dynamic Incident Form</title>
-<style>
-  body {
-    font-family: Arial, sans-serif;
-    padding: 20px;
-    background: #f4f4f9;
-  }
-  form {
-    background: #fff;
-    padding: 20px;
-    border-radius: 10px;
-    max-width: 500px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-  }
-  label {
-    display: block;
-    margin-top: 15px;
-    font-weight: bold;
-  }
-  .label-with-tip {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .field-title {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    align-items: center;
-  }
-  .workplace-toggle {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 15px;
-  }
-  .workplace-toggle input[type="checkbox"] {
-    width: auto;
-  }
-  .warning-banner {
-    margin-top: 12px;
-    padding: 12px 14px;
-    border-radius: 8px;
-    background: #fff3e0;
-    border: 1px solid #fb8c00;
-    color: #e65100;
-    font-size: 0.95rem;
-    line-height: 1.4;
-  }
-  .follow-up-section {
-    margin-top: 16px;
-    padding: 12px 14px;
-    border: 1px solid #d0d7de;
-    border-radius: 8px;
-    background: #fbfbfd;
-  }
-  .follow-up-options {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    margin-top: 6px;
-  }
-  .follow-up-option {
-    display: flex;
-    align-items: flex-start;
-    gap: 6px;
-    font-size: 0.9rem;
-    line-height: 1.3;
-  }
-  .follow-up-option input[type="radio"] {
-    width: auto;
-  }
-  .follow-up-notes {
-    margin-top: 8px;
-  }
-  .follow-up-option.hidden {
-    display: none;
-  }
-  .follow-up-warning {
-    margin-top: 8px;
-    padding: 8px 10px;
-    border-radius: 6px;
-    background: #fff3e0;
-    border: 1px solid #fb8c00;
-    color: #e65100;
-    font-size: 0.85rem;
-    line-height: 1.3;
-  }
-  .vital-warning {
-    margin-top: 4px;
-    padding: 4px 6px;
-    border-radius: 4px;
-    background: #ffebee;
-    border-left: 3px solid #e53935;
-    color: #b71c1c;
-    font-size: 0.8rem;
-    line-height: 1.3;
-  }
-  .info-tip {
-    position: relative;
-    background: #1976d2;
-    color: #fff;
-    border: none;
-    border-radius: 50%;
-    width: 20px;
-    height: 20px;
-    font-size: 12px;
-    line-height: 20px;
-    text-align: center;
-    cursor: help;
-    padding: 0;
-  }
-  .info-tip::after {
-    content: attr(data-tooltip);
-    position: absolute;
-    top: 50%;
-    left: 110%;
-    transform: translateY(-50%);
-    background: rgba(33, 33, 33, 0.95);
-    color: #fff;
-    padding: 6px 8px;
-    border-radius: 6px;
-    font-size: 0.75rem;
-    white-space: nowrap;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.15s ease;
-    z-index: 10;
-  }
-  .info-tip::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 100%;
-    transform: translateY(-50%);
-    border-width: 6px;
-    border-style: solid;
-    border-color: transparent rgba(33, 33, 33, 0.95) transparent transparent;
-    opacity: 0;
-    transition: opacity 0.15s ease;
-  }
-  .info-tip:focus-visible {
-    outline: 2px solid #90caf9;
-  }
-  .info-tip:hover::after,
-  .info-tip:focus::after,
-  .info-tip:hover::before,
-  .info-tip:focus::before {
-    opacity: 1;
-  }
-  .field-hints {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    font-size: 0.75rem;
-  }
-  .field-hints button {
-    border: 1px solid transparent;
-    border-radius: 10px;
-    padding: 1px 6px;
-    cursor: pointer;
-    line-height: 1.2;
-    transition: background 0.15s ease, border-color 0.15s ease;
-  }
-  .field-hints button:hover {
-    filter: brightness(0.95);
-  }
-  .field-hints button[data-severity="normal"] {
-    background: #e8f5e9;
-    border-color: #a5d6a7;
-    color: #1b5e20;
-  }
-  .field-hints button[data-severity="caution"] {
-    background: #fff8e1;
-    border-color: #ffe082;
-    color: #e65100;
-  }
-  .field-hints button[data-severity="critical"] {
-    background: #ffebee;
-    border-color: #ffcdd2;
-    color: #b71c1c;
-  }
-  .field-hints button[data-severity="info"] {
-    background: #e3f2fd;
-    border-color: #90caf9;
-    color: #0d47a1;
-  }
-  .field-hints button[data-severity="neutral"] {
-    background: #eceff1;
-    border-color: #cfd8dc;
-    color: #37474f;
-  }
-  input, select, textarea {
-    width: 100%;
-    padding: 8px;
-    margin-top: 5px;
-    border-radius: 5px;
-    border: 1px solid #ccc;
-    box-sizing: border-box;
-  }
-  .hidden {
-    display: none;
-  }
-  button {
-    margin-top: 20px;
-    padding: 10px 15px;
-    border: none;
-    border-radius: 5px;
-    background: #0077cc;
-    color: white;
-    font-size: 16px;
-    cursor: pointer;
-  }
-  button:hover {
-    background: #005fa3;
-  }
-</style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/BlizzardWolf7/Toast-Notification-Library@main/toast.css">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/gh/BlizzardWolf7/Toast-Notification-Library@main/toast.js"></script>
+<script src="incidents.js"></script>
+<script src="guidebook-data.js"></script>
 </head>
 <body>
 
 <h2>Advanced Dynamic Incident Report Form</h2>
+<div class="tab-container">
+  <button type="button" class="tab-button active" data-tab="add">Add Incident</button>
+  <button type="button" class="tab-button" data-tab="dashboard">Dashboard</button>
+  <button type="button" class="tab-button" data-tab="view">View Incidents</button>
+  <button type="button" class="tab-button" data-tab="guide">Quick Reference</button>
+</div>
+
+<div id="addIncidentPane" class="tab-pane active">
 <form id="incidentForm">
+  <div id="editBanner" class="edit-banner hidden" role="status">
+    <span class="edit-banner__label">Editing stored incident</span>
+    <strong id="editRecordLabel"></strong>
+    <button type="button" id="cancelEditButton">Cancel edit</button>
+  </div>
+    <div class="label-with-tip">
+      <label for="operationalContext">Operational context:</label>
+      <button type="button" class="info-tip" data-tooltip="Indicate whether you are operating in a peacetime/garrison or wartime/deployed environment to tailor follow-up workflows." aria-label="Operational context information">i</button>
+    </div>
+    <select id="operationalContext">
+      <option value="peace">Peacetime / garrison operations</option>
+      <option value="war">Wartime / deployed operations</option>
+    </select>
   <div class="label-with-tip">
     <label for="incidentCategory">Incident category:</label>
     <button type="button" class="info-tip" data-tooltip="Pick the general category that best fits the situation." aria-label="Incident category information">i</button>
@@ -254,6 +66,30 @@
   </div>
 
   <div id="basicFields" class="hidden">
+      <div class="label-with-tip">
+        <label for="patientName">Patient name:</label>
+        <button type="button" class="info-tip" data-tooltip="Record the casualty's full name or identifier for follow-up documentation." aria-label="Patient name information">i</button>
+      </div>
+      <input type="text" id="patientName" placeholder="Full name or identifier">
+
+      <div class="label-with-tip">
+        <label for="rosterNumber">Roster / MA number:</label>
+        <button type="button" class="info-tip" data-tooltip="Capture the roster, MA number, or unit ID used for accountability." aria-label="Roster number information">i</button>
+      </div>
+      <input type="text" id="rosterNumber" placeholder="Roster number, MA number, or ID code">
+
+    <div class="label-with-tip">
+      <label for="incidentDateTime">Incident time:</label>
+      <button type="button" class="info-tip" data-tooltip="Log when the incident occurred. Use the quick actions for now or recent times." aria-label="Incident time information">i</button>
+    </div>
+    <div id="incidentTimeQuickActions" class="field-hints">
+      <button type="button" data-action="now" data-severity="info">Now</button>
+      <button type="button" data-action="minus-10" data-severity="info">10 minutes ago</button>
+      <button type="button" data-action="minus-30" data-severity="info">30 minutes ago</button>
+      <button type="button" data-action="unknown" data-severity="neutral">Unknown</button>
+    </div>
+    <input type="datetime-local" id="incidentDateTime">
+
     <div class="label-with-tip">
     <label for="location">Location:</label>
       <button type="button" class="info-tip" data-tooltip="Document where the incident occurred for safety follow-up and reporting." aria-label="Location information">i</button>
@@ -265,6 +101,22 @@
       <button type="button" class="info-tip" data-tooltip="Summarize what happened, patient presentation, and notable observations." aria-label="Description information">i</button>
     </div>
     <textarea id="description" rows="3" placeholder="Describe the incident..."></textarea>
+
+    <div class="label-with-tip">
+      <label for="mechanismOfInjury">Mechanism of injury (MOI):</label>
+      <button type="button" class="info-tip" data-tooltip="Document how the injury occurred (blast, fall, MVC, etc.)." aria-label="Mechanism of injury information">i</button>
+    </div>
+    <input type="text" id="mechanismOfInjury" placeholder="e.g., Blast injury from IED">
+
+    <div class="label-with-tip">
+      <label for="currentStatus">Current status:</label>
+      <button type="button" class="info-tip" data-tooltip="Track whether the incident is still being managed, under observation, or fully handed off." aria-label="Current status information">i</button>
+    </div>
+    <select id="currentStatus">
+      <option value="active">Active / ongoing care</option>
+      <option value="monitoring">Monitoring / awaiting follow-up</option>
+      <option value="completed">Completed / handed off</option>
+    </select>
   </div>
 
   <div id="vitalsFields" class="hidden">
@@ -384,6 +236,41 @@
       </div>
       <input type="text" id="pupilResponse" placeholder="e.g., PERRLA">
     </div>
+    <div class="vital-field" data-vital="avpu">
+      <div class="field-title">
+        <label for="avpu">AVPU status:</label>
+        <button type="button" class="info-tip" data-tooltip="Select the casualty's responsiveness: Alert, responds to Verbal or Pain, or Unresponsive." aria-label="AVPU information">i</button>
+        <div class="field-hints" data-for="avpu">
+          <button type="button" data-value="alert" data-severity="normal">Alert</button>
+          <button type="button" data-value="verbal" data-severity="caution">Verbal</button>
+          <button type="button" data-value="pain" data-severity="critical">Pain</button>
+          <button type="button" data-value="unresponsive" data-severity="critical">Unresponsive</button>
+        </div>
+      </div>
+      <select id="avpu">
+        <option value="">--Select AVPU status--</option>
+        <option value="alert">Alert</option>
+        <option value="verbal">Responds to verbal</option>
+        <option value="pain">Responds to pain</option>
+        <option value="unresponsive">Unresponsive</option>
+      </select>
+    </div>
+  </div>
+
+  <div id="prolongedCareSection" class="prolonged-care hidden">
+    <div class="prolonged-header">
+      <strong>Prolonged tactical field care</strong>
+      <span>Log recurring vital assessments during extended casualty care.</span>
+    </div>
+    <div class="prolonged-controls">
+      <label for="checkupTime">Assessment timestamp:</label>
+      <input type="datetime-local" id="checkupTime">
+      <label for="checkupNotes">Notes / interventions:</label>
+      <textarea id="checkupNotes" rows="2" placeholder="Hemorrhage re-check, fluids, medications, etc."></textarea>
+      <button type="button" id="recordCheckupButton">Add follow-up check</button>
+    </div>
+    <ul id="checkupList" class="checkup-list"></ul>
+    <p id="checkupPlaceholder" class="checkup-placeholder hidden">No follow-up checks logged yet.</p>
   </div>
 
   <div id="treatmentFields" class="hidden">
@@ -402,29 +289,45 @@
     </div>
     <div id="followUpWarning" class="follow-up-warning hidden" role="alert"></div>
     <div class="follow-up-options">
-      <label class="follow-up-option">
+        <label class="follow-up-option" data-context="peace">
         <input type="radio" name="followUp" value="none">
         <span>No follow-up needed – treated on-site and released</span>
       </label>
-      <label class="follow-up-option">
+        <label class="follow-up-option" data-context="peace">
         <input type="radio" name="followUp" value="doctor">
         <span>Advised to see a doctor – non-urgent follow-up</span>
       </label>
-      <label class="follow-up-option">
+        <label class="follow-up-option" data-context="peace">
         <input type="radio" name="followUp" value="pharmacy">
         <span>Advised to visit a pharmacy – minor injuries or medication needed</span>
       </label>
-      <label class="follow-up-option">
+        <label class="follow-up-option" data-context="peace">
         <input type="radio" name="followUp" value="ambulance">
         <span>Sent via ambulance – transported to hospital or urgent care</span>
       </label>
-      <label class="follow-up-option">
+        <label class="follow-up-option" data-context="both">
         <input type="radio" name="followUp" value="refused">
         <span>Refused further care – patient declined additional treatment</span>
       </label>
-      <label class="follow-up-option">
+        <label class="follow-up-option" data-context="both">
         <input type="radio" name="followUp" value="other">
         <span>Other / notes – provide specific instructions</span>
+      </label>
+        <label class="follow-up-option" data-context="war">
+          <input type="radio" name="followUp" value="remain-with-unit">
+          <span>Returned to unit – managed by organic medic / squad leader</span>
+        </label>
+        <label class="follow-up-option" data-context="war">
+          <input type="radio" name="followUp" value="role1-aid-station">
+          <span>Evacuated to Role 1 aid station / forward aid post</span>
+        </label>
+        <label class="follow-up-option" data-context="war">
+          <input type="radio" name="followUp" value="role2-surgical">
+          <span>Evacuated to Role 2 surgical team / damage control resuscitation</span>
+        </label>
+        <label class="follow-up-option" data-context="war">
+          <input type="radio" name="followUp" value="medevac">
+          <span>MEDEVAC requested – theater/strategic evacuation initiated</span>
       </label>
     </div>
     <div id="followUpOtherWrapper" class="follow-up-notes hidden">
@@ -434,957 +337,187 @@
 
   <button type="submit">Submit</button>
 </form>
-
-<script>
-  const incidentCategory = document.getElementById('incidentCategory');
-  const incidentType = document.getElementById('incidentType');
-  const basicFields = document.getElementById('basicFields');
-  const vitalsFields = document.getElementById('vitalsFields');
-  const treatmentFields = document.getElementById('treatmentFields');
-  const workplaceSection = document.getElementById('workplaceSection');
-  const workplaceCheckbox = document.getElementById('workplaceIncident');
-  const workplaceWarning = document.getElementById('workplaceWarning');
-
-  const locationInput = document.getElementById('location');
-  const descriptionInput = document.getElementById('description');
-  const bloodPressureInput = document.getElementById('bloodPressure');
-  const spo2Input = document.getElementById('spo2');
-  const heartRateInput = document.getElementById('heartRate');
-  const respiratoryRateInput = document.getElementById('respiratoryRate');
-  const temperatureInput = document.getElementById('temperature');
-  const bloodGlucoseInput = document.getElementById('bloodGlucose');
-  const painScoreInput = document.getElementById('painScore');
-  const pupilResponseInput = document.getElementById('pupilResponse');
-  const treatmentInput = document.getElementById('treatment');
-  const treatmentQuickActions = document.getElementById('treatmentQuickActions');
-  const form = document.getElementById('incidentForm');
-  const followUpSection = document.getElementById('followUpSection');
-  const followUpOptions = Array.from(document.querySelectorAll('input[name="followUp"]'));
-  const followUpOptionWrappers = followUpOptions.reduce((map, option) => {
-    map.set(option.value, option.closest('.follow-up-option'));
-    return map;
-  }, new Map());
-  const followUpOtherWrapper = document.getElementById('followUpOtherWrapper');
-  const followUpOtherInput = document.getElementById('followUpOther');
-  const followUpWarning = document.getElementById('followUpWarning');
-  const followUpWarningMessages = {
-    lifeThreatening: 'Life-threatening incident: patient should be transferred by ambulance unless transport is refused.',
-    potentialLifeThreatening: 'Potentially life-threatening: monitor closely and consider ambulance transport if symptoms escalate.',
-    serious: 'Serious incident: ensure an appropriate follow-up plan and consider escalation if condition worsens.'
-  };
-
-  const incidentData = [
-    {
-      id: 'minor',
-      label: 'Minor Injuries',
-      incidents: [
-        { value: 'cut-laceration', label: 'Cut / small laceration' },
-        { value: 'scrape-abrasion', label: 'Scrape / abrasion' },
-        { value: 'bruise-contusion', label: 'Bruise / contusion' },
-        { value: 'sprain-strain', label: 'Sprain / strain' },
-        { value: 'blister', label: 'Blister' },
-        { value: 'burn-minor', label: 'Burn (minor)' },
-        { value: 'foreign-object-eye', label: 'Foreign object in eye / minor irritation' }
-      ]
-    },
-    {
-      id: 'medical',
-      label: 'Medical Emergencies',
-      incidents: [
-        { value: 'heat-related', label: 'Heat stroke / overheating / dehydration' },
-        { value: 'cold-exposure', label: 'Cold exposure / hypothermia / frostbite' },
-        { value: 'fainting-syncope', label: 'Fainting / syncope' },
-        { value: 'anaphylaxis', label: 'Severe allergic reaction / anaphylaxis' },
-        { value: 'chest-pain-cardiac', label: 'Chest pain / possible cardiac issue' },
-        { value: 'seizure', label: 'Seizure / convulsion' },
-        { value: 'asthma-breathing', label: 'Asthma attack / breathing difficulty' },
-        { value: 'severe-bleeding', label: 'Severe bleeding' }
-      ]
-    },
-    {
-      id: 'substance',
-      label: 'Substance-Related',
-      incidents: [
-        { value: 'alcohol-intoxication', label: 'Alcohol intoxication / overconsumption' },
-        { value: 'recreational-drug', label: 'Recreational drug use / adverse reaction' },
-        { value: 'suspected-overdose', label: 'Suspected overdose' },
-        { value: 'vomiting-substance', label: 'Vomiting due to substance intake' }
-      ]
-    },
-    {
-      id: 'environmental',
-      label: 'Environmental / Festival-Related',
-      incidents: [
-        { value: 'crowd-crush', label: 'Crowd crush / trampling risk' },
-        { value: 'slip-fall', label: 'Slips / falls' },
-        { value: 'bite-sting', label: 'Insect / animal bite or sting' },
-        { value: 'sunburn-heat', label: 'Sunburn / minor heat exposure' },
-        { value: 'weather-related', label: 'Weather-related injuries' }
-      ]
-    },
-    {
-      id: 'staff',
-      label: 'Staff / Operational Incidents',
-      incidents: [
-        { value: 'chemical-exposure', label: 'Chemical burn / exposure' },
-        { value: 'electrical-injury', label: 'Electrical injury / shock' },
-        { value: 'equipment-injury', label: 'Equipment-related injury' },
-        { value: 'manual-handling', label: 'Manual handling injury' },
-        { value: 'occupational-other', label: 'Other occupational hazards' }
-      ]
-    },
-    {
-      id: 'mental',
-      label: 'Mental Health / Behavioral',
-      incidents: [
-        { value: 'anxiety-panic', label: 'Anxiety / panic attack' },
-        { value: 'aggressive-assault', label: 'Aggressive behavior / assault' },
-        { value: 'confusion-disorientation', label: 'Confusion / disorientation' },
-        { value: 'self-harm-risk', label: 'Self-harm risk' }
-      ]
-    },
-    {
-      id: 'other',
-      label: 'Other / Miscellaneous',
-      incidents: [
-        { value: 'eye-irritation', label: 'Eye irritation (dust, smoke, debris)' },
-        { value: 'headache-migraine', label: 'Headache / migraine' },
-        { value: 'nausea-upset-stomach', label: 'Nausea / upset stomach (not substance-related)' },
-        { value: 'medical-device-issue', label: 'Medical device / equipment issues' },
-        { value: 'other-unspecified', label: 'Other / unspecified' }
-      ]
-    }
-  ];
-
-  incidentData.forEach(({ id, label }) => {
-    const option = document.createElement('option');
-    option.value = id;
-    option.textContent = label;
-    incidentCategory.appendChild(option);
-  });
-
-  const setIncidentTypeOptions = (categoryId) => {
-    incidentType.innerHTML = '<option value="">--Select incident--</option>';
-
-    if (!categoryId) {
-      incidentType.disabled = true;
-      return;
-    }
-
-    const category = incidentData.find((item) => item.id === categoryId);
-    if (!category) {
-      incidentType.disabled = true;
-      return;
-    }
-
-    category.incidents.forEach(({ value, label }) => {
-      const option = document.createElement('option');
-      option.value = value;
-      option.textContent = label;
-      incidentType.appendChild(option);
-    });
-
-    incidentType.disabled = false;
-  };
-
-  const vitalFieldMap = {
-    bloodPressure: document.querySelector('[data-vital="bloodPressure"]'),
-    spo2: document.querySelector('[data-vital="spo2"]'),
-    heartRate: document.querySelector('[data-vital="heartRate"]'),
-    respiratoryRate: document.querySelector('[data-vital="respiratoryRate"]'),
-    temperature: document.querySelector('[data-vital="temperature"]'),
-    bloodGlucose: document.querySelector('[data-vital="bloodGlucose"]'),
-    painScore: document.querySelector('[data-vital="painScore"]'),
-    pupilResponse: document.querySelector('[data-vital="pupilResponse"]')
-  };
-
-  const vitalInputMap = {
-    bloodPressure: bloodPressureInput,
-    spo2: spo2Input,
-    heartRate: heartRateInput,
-    respiratoryRate: respiratoryRateInput,
-    temperature: temperatureInput,
-    bloodGlucose: bloodGlucoseInput,
-    painScore: painScoreInput,
-    pupilResponse: pupilResponseInput
-  };
-
-  const allowedNonNumericVitalValues = {
-    bloodPressure: ['unable to obtain'],
-    spo2: ['unknown'],
-    heartRate: ['unknown'],
-    respiratoryRate: ['unknown'],
-    temperature: ['not taken', 'unknown'],
-    bloodGlucose: ['not taken', 'unknown'],
-    painScore: ['unable to rate'],
-    pupilResponse: ['unknown']
-  };
-
-  const vitalWarningMap = {
-    bloodPressure: document.querySelector('[data-warning="bloodPressure"]'),
-    spo2: document.querySelector('[data-warning="spo2"]'),
-    heartRate: document.querySelector('[data-warning="heartRate"]'),
-    respiratoryRate: document.querySelector('[data-warning="respiratoryRate"]'),
-    temperature: document.querySelector('[data-warning="temperature"]'),
-    bloodGlucose: document.querySelector('[data-warning="bloodGlucose"]')
-  };
-
-  const treatmentQuickActionMap = {
-    'cut-laceration': [
-      'Wound cleaned',
-      'Bandage applied',
-      'Plaster applied'
-    ],
-    'scrape-abrasion': [
-      'Area cleaned',
-      'Antiseptic applied',
-      'Plaster applied'
-    ],
-    'bruise-contusion': [
-      'Ice applied',
-      'Compression bandage applied',
-      'Patient advised rest'
-    ],
-    'sprain-strain': [
-      'Ice applied',
-      'Compression applied',
-      'Limb elevated',
-      'Advised rest'
-    ],
-    'blister': [
-      'Blister cleaned',
-      'Protective dressing applied',
-      'Padding applied'
-    ],
-    'burn-minor': [
-      'Burn cooled with water',
-      'Sterile dressing applied',
-      'Topical burn gel applied'
-    ],
-    'foreign-object-eye': [
-      'Eye irrigated',
-      'Object removed safely',
-      'Lubricating drops applied'
-    ],
-    'heat-related': [
-      'Patient moved to cool area',
-      'Cooling packs applied',
-      'Fluids provided',
-      'Monitoring vital signs'
-    ],
-    'cold-exposure': [
-      'Wet clothing removed',
-      'Passive rewarming initiated',
-      'Warm blankets applied'
-    ],
-    'fainting-syncope': [
-      'Patient laid supine',
-      'Legs elevated',
-      'Glucose administered if needed'
-    ],
-    'anaphylaxis': [
-      'Epinephrine administered',
-      'Airway monitored',
-      'Oxygen provided'
-    ],
-    'chest-pain-cardiac': [
-      'Oxygen administered',
-      'Aspirin administered',
-      'Monitored with ECG'
-    ],
-    'seizure': [
-      'Patient protected from injury',
-      'Airway monitored',
-      'Postictal reassessment'
-    ],
-    'asthma-breathing': [
-      'Bronchodilator administered',
-      'Oxygen provided',
-      'Patient coached on breathing'
-    ],
-    'severe-bleeding': [
-      'Direct pressure applied',
-      'Tourniquet applied',
-      'Bleeding controlled with dressing'
-    ],
-    'alcohol-intoxication': [
-      'Airway monitored',
-      'Patient positioned for safety',
-      'Observation initiated'
-    ],
-    'recreational-drug': [
-      'Airway monitored',
-      'Activated charcoal considered',
-      'Observation initiated'
-    ],
-    'suspected-overdose': [
-      'Naloxone administered (if indicated)',
-      'Airway supported',
-      'Oxygen provided'
-    ],
-    'vomiting-substance': [
-      'Airway cleared',
-      'Patient positioned lateral',
-      'Fluids offered if appropriate'
-    ],
-    'crowd-crush': [
-      'Patient extricated to safe area',
-      'Airway and breathing supported',
-      'Bleeding controlled'
-    ],
-    'slip-fall': [
-      'Ice applied',
-      'Compression bandage applied',
-      'Mobility assessed'
-    ],
-    'bite-sting': [
-      'Area cleaned',
-      'Cold pack applied',
-      'Antihistamine administered'
-    ],
-    'sunburn-heat': [
-      'Cooling gel applied',
-      'Hydration encouraged',
-      'Sun exposure limited'
-    ],
-    'weather-related': [
-      'Moved to safe shelter',
-      'Warm/dry clothing provided',
-      'Monitoring vital signs'
-    ],
-    'chemical-exposure': [
-      'Area irrigated',
-      'Contaminated clothing removed',
-      'Poison control contacted'
-    ],
-    'electrical-injury': [
-      'Power source isolated',
-      'Cardiac monitoring initiated',
-      'Burns treated'
-    ],
-    'equipment-injury': [
-      'Bleeding controlled',
-      'Immobilized affected area',
-      'Pain managed'
-    ],
-    'manual-handling': [
-      'Ice applied to strain',
-      'Compression wrap applied',
-      'Rest advised'
-    ],
-    'occupational-other': [
-      'Hazard mitigated',
-      'First aid applied',
-      'Supervisor notified'
-    ],
-    'anxiety-panic': [
-      'Breathing coaching',
-      'Grounding techniques used',
-      'Supportive reassurance provided'
-    ],
-    'aggressive-assault': [
-      'Scene secured',
-      'Bleeding controlled',
-      'Police/security notified'
-    ],
-    'confusion-disorientation': [
-      'Blood glucose checked',
-      'Hydration provided',
-      'Neurological status monitored'
-    ],
-    'self-harm-risk': [
-      'Scene secured',
-      'Self-harm implements removed',
-      'Mental health support contacted'
-    ],
-    'eye-irritation': [
-      'Eye flushed',
-      'Lubricating drops applied',
-      'Eye patch applied'
-    ],
-    'headache-migraine': [
-      'Quiet dark environment provided',
-      'Hydration encouraged',
-      'Analgesic administered'
-    ],
-    'nausea-upset-stomach': [
-      'Antiemetic administered',
-      'Hydration encouraged',
-      'Patient positioned comfortably'
-    ],
-    'medical-device-issue': [
-      'Device inspected',
-      'Manufacturer contacted',
-      'Manual backup initiated'
-    ],
-    'other-unspecified': [
-      'Patient monitored',
-      'Basic first aid applied',
-      'Provider notified'
-    ]
-  };
-
-  const incidentVitalRequirements = {
-    'cut-laceration': ['painScore'],
-    'scrape-abrasion': ['painScore'],
-    'bruise-contusion': ['painScore'],
-    'sprain-strain': ['painScore'],
-    'blister': ['painScore'],
-    'burn-minor': ['temperature', 'painScore'],
-    'foreign-object-eye': ['painScore', 'pupilResponse'],
-    'heat-related': ['bloodPressure', 'spo2', 'heartRate', 'respiratoryRate', 'temperature'],
-    'cold-exposure': ['temperature', 'bloodPressure', 'heartRate', 'respiratoryRate', 'spo2'],
-    'fainting-syncope': ['bloodPressure', 'heartRate', 'spo2'],
-    'anaphylaxis': ['bloodPressure', 'heartRate', 'respiratoryRate', 'spo2'],
-    'chest-pain-cardiac': ['bloodPressure', 'heartRate', 'spo2'],
-    'seizure': ['bloodPressure', 'heartRate', 'respiratoryRate', 'spo2'],
-    'asthma-breathing': ['spo2', 'heartRate', 'respiratoryRate'],
-    'severe-bleeding': ['bloodPressure', 'heartRate', 'painScore'],
-    'alcohol-intoxication': ['bloodPressure', 'heartRate', 'respiratoryRate', 'spo2'],
-    'recreational-drug': ['bloodPressure', 'heartRate', 'respiratoryRate', 'spo2'],
-    'suspected-overdose': ['bloodPressure', 'heartRate', 'respiratoryRate', 'spo2', 'temperature'],
-    'vomiting-substance': ['bloodPressure', 'heartRate', 'respiratoryRate', 'spo2'],
-    'crowd-crush': ['bloodPressure', 'heartRate', 'respiratoryRate', 'spo2'],
-    'slip-fall': ['bloodPressure', 'heartRate', 'painScore'],
-    'bite-sting': ['bloodPressure', 'heartRate', 'respiratoryRate', 'spo2', 'painScore'],
-    'sunburn-heat': ['temperature', 'painScore'],
-    'weather-related': ['temperature', 'bloodPressure', 'heartRate', 'respiratoryRate', 'spo2'],
-    'chemical-exposure': ['bloodPressure', 'heartRate', 'respiratoryRate', 'spo2', 'painScore'],
-    'electrical-injury': ['bloodPressure', 'heartRate', 'respiratoryRate', 'spo2', 'painScore'],
-    'equipment-injury': ['bloodPressure', 'heartRate', 'painScore'],
-    'manual-handling': ['bloodPressure', 'heartRate', 'painScore'],
-    'occupational-other': ['bloodPressure', 'heartRate', 'respiratoryRate', 'spo2'],
-    'anxiety-panic': ['heartRate', 'respiratoryRate', 'spo2'],
-    'aggressive-assault': ['bloodPressure', 'heartRate', 'painScore'],
-    'confusion-disorientation': ['bloodPressure', 'heartRate', 'respiratoryRate', 'spo2', 'bloodGlucose'],
-    'self-harm-risk': ['bloodPressure', 'heartRate', 'painScore'],
-    'eye-irritation': ['painScore', 'pupilResponse'],
-    'headache-migraine': ['bloodPressure', 'heartRate', 'painScore'],
-    'nausea-upset-stomach': ['bloodPressure', 'heartRate', 'respiratoryRate', 'spo2'],
-    'medical-device-issue': ['bloodPressure', 'heartRate', 'respiratoryRate', 'spo2', 'bloodGlucose'],
-    'other-unspecified': ['bloodPressure', 'heartRate', 'respiratoryRate', 'spo2', 'temperature']
-  };
-
-  const incidentsRequiringTreatment = new Set([
-    'cut-laceration',
-    'scrape-abrasion',
-    'bruise-contusion',
-    'sprain-strain',
-    'blister',
-    'burn-minor',
-    'foreign-object-eye',
-    'heat-related',
-    'cold-exposure',
-    'fainting-syncope',
-    'anaphylaxis',
-    'chest-pain-cardiac',
-    'seizure',
-    'asthma-breathing',
-    'severe-bleeding',
-    'alcohol-intoxication',
-    'recreational-drug',
-    'suspected-overdose',
-    'vomiting-substance',
-    'crowd-crush',
-    'slip-fall',
-    'bite-sting',
-    'sunburn-heat',
-    'weather-related',
-    'chemical-exposure',
-    'electrical-injury',
-    'equipment-injury',
-    'manual-handling',
-    'occupational-other',
-    'anxiety-panic',
-    'aggressive-assault',
-    'confusion-disorientation',
-    'self-harm-risk',
-    'eye-irritation',
-    'headache-migraine',
-    'nausea-upset-stomach',
-    'medical-device-issue',
-    'other-unspecified'
-  ]);
-
-  const seriousIncidents = new Set([
-    'heat-related',
-    'cold-exposure',
-    'anaphylaxis',
-    'chest-pain-cardiac',
-    'seizure',
-    'asthma-breathing',
-    'severe-bleeding',
-    'suspected-overdose',
-    'alcohol-intoxication',
-    'recreational-drug'
-  ]);
-
-  const lifeThreateningIncidents = new Set([
-    'cold-exposure',
-    'anaphylaxis',
-    'chest-pain-cardiac',
-    'seizure',
-    'asthma-breathing',
-    'severe-bleeding',
-    'suspected-overdose'
-  ]);
-
-  const potentialLifeThreateningIncidents = new Set([
-    'heat-related'
-  ]);
-
-  const minorIncidentDefaults = new Set([
-    'cut-laceration',
-    'scrape-abrasion',
-    'bruise-contusion',
-    'sprain-strain',
-    'blister',
-    'burn-minor',
-    'foreign-object-eye'
-  ]);
-
-  const workplaceEligibleIncidents = new Set([
-    'slip-fall',
-    'chemical-exposure',
-    'electrical-injury',
-    'equipment-injury',
-    'manual-handling',
-    'occupational-other'
-  ]);
-
-  workplaceCheckbox.addEventListener('change', () => {
-    if (workplaceCheckbox.checked) {
-      workplaceWarning.classList.remove('hidden');
-    } else {
-      workplaceWarning.classList.add('hidden');
-    }
-  });
-
-  let currentRequiredVitals = new Set();
-
-  const setVitalWarning = (key, message) => {
-    const warningEl = vitalWarningMap[key];
-    if (!warningEl) return;
-    if (message) {
-      warningEl.textContent = message;
-      warningEl.classList.remove('hidden');
-    } else {
-      warningEl.textContent = '';
-      warningEl.classList.add('hidden');
-    }
-  };
-
-  const vitalEvaluators = {
-    bloodPressure: (raw) => {
-      const match = raw.match(/^\s*(\d{2,3})\s*\/\s*(\d{2,3})\s*$/);
-      if (!match) {
-        return '';
-      }
-      const systolic = Number(match[1]);
-      const diastolic = Number(match[2]);
-      if (!Number.isFinite(systolic) || !Number.isFinite(diastolic)) {
-        return '';
-      }
-      if (systolic < 90 || diastolic < 50) {
-        return 'Blood pressure suggests hypotension. Monitor for shock and treat immediately.';
-      }
-      if (systolic > 180 || diastolic > 110) {
-        return 'Blood pressure is critically high. Evaluate for hypertensive emergency.';
-      }
-      return '';
-    },
-    spo2: (raw) => {
-      const value = Number(raw);
-      if (!Number.isFinite(value)) {
-        return '';
-      }
-      if (value < 85) {
-        return 'SpO₂ below 85% indicates critical hypoxia. Provide high-flow oxygen and escalate care.';
-      }
-      if (value < 92) {
-        return 'SpO₂ below 92% is low. Administer oxygen and reassess frequently.';
-      }
-      return '';
-    },
-    heartRate: (raw) => {
-      const value = Number(raw);
-      if (!Number.isFinite(value)) {
-        return '';
-      }
-      if (value < 50) {
-        return 'Heart rate below 50 bpm suggests bradycardia. Assess perfusion and potential causes.';
-      }
-      if (value > 120) {
-        return 'Heart rate above 120 bpm suggests tachycardia. Evaluate for shock, pain, or arrhythmia.';
-      }
-      return '';
-    },
-    respiratoryRate: (raw) => {
-      const value = Number(raw);
-      if (!Number.isFinite(value)) {
-        return '';
-      }
-      if (value < 10) {
-        return 'Respiratory rate below 10 breaths/min indicates hypoventilation. Support airway and breathing.';
-      }
-      if (value > 24) {
-        return 'Respiratory rate above 24 breaths/min indicates respiratory distress. Evaluate and support ventilation.';
-      }
-      return '';
-    },
-    temperature: (raw) => {
-      const value = Number(raw);
-      if (!Number.isFinite(value)) {
-        return '';
-      }
-      if (value < 35) {
-        return 'Temperature below 35°C indicates hypothermia. Begin rewarming protocols.';
-      }
-      if (value > 39) {
-        return 'Temperature above 39°C indicates high fever or heat illness. Initiate cooling measures.';
-      }
-      return '';
-    },
-    bloodGlucose: (raw) => {
-      const value = Number(raw);
-      if (!Number.isFinite(value)) {
-        return '';
-      }
-      if (value < 70) {
-        return 'Blood glucose below 70 mg/dL indicates hypoglycemia. Provide glucose and monitor.';
-      }
-      if (value > 250) {
-        return 'Blood glucose above 250 mg/dL indicates hyperglycemia. Assess for DKA or HHS.';
-      }
-      return '';
-    }
-  };
-
-  const evaluateVital = (key) => {
-    const input = vitalInputMap[key];
-    if (!input) return;
-    const rawValue = input.value.trim();
-    if (!rawValue) {
-      setVitalWarning(key, '');
-      return;
-    }
-    const allowedValues = allowedNonNumericVitalValues[key] || [];
-    if (allowedValues.includes(rawValue.toLowerCase())) {
-      setVitalWarning(key, '');
-      return;
-    }
-    const evaluator = vitalEvaluators[key];
-    if (!evaluator) {
-      setVitalWarning(key, '');
-      return;
-    }
-    const message = evaluator(rawValue);
-    setVitalWarning(key, message);
-  };
-
-  const createQuickActionButton = (label) => {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.textContent = label;
-    button.dataset.value = label;
-    return button;
-  };
-
-  const applyHintValue = (targetKey, value) => {
-    const input = vitalInputMap[targetKey];
-    if (!input) return;
-    input.value = value;
-    input.focus();
-    evaluateVital(targetKey);
-  };
-
-  const applyTreatmentQuickAction = (label) => {
-    const currentValue = treatmentInput.value.trim();
-    if (!currentValue) {
-      treatmentInput.value = label;
-    } else if (!currentValue.includes(label)) {
-      treatmentInput.value = `${currentValue}\n${label}`;
-    }
-    treatmentInput.focus();
-  };
-
-  const hintButtons = document.querySelectorAll('.field-hints button');
-
-  hintButtons.forEach((button) => {
-    button.addEventListener('click', () => {
-      const container = button.closest('.field-hints');
-      if (!container) return;
-      const targetKey = container.dataset.for;
-      const value = button.dataset.value ?? button.textContent.trim();
-      applyHintValue(targetKey, value);
-    });
-  });
-
-  Object.entries(vitalInputMap).forEach(([key, input]) => {
-    if (!vitalWarningMap[key]) {
-      return;
-    }
-    input.addEventListener('input', () => evaluateVital(key));
-  });
-
-  const clearFollowUpSelection = () => {
-    followUpOptions.forEach((option) => {
-      option.checked = false;
-    });
-    followUpOtherWrapper.classList.add('hidden');
-    followUpOtherInput.value = '';
-    followUpWarning.classList.add('hidden');
-    followUpWarning.textContent = '';
-  };
-
-  const adjustFollowUpOptions = (incidentValue) => {
-    clearFollowUpSelection();
-    followUpOptionWrappers.forEach((wrapper) => {
-      wrapper.classList.remove('hidden');
-    });
-
-    if (!incidentValue) {
-      return;
-    }
-
-    const isLifeThreatening = lifeThreateningIncidents.has(incidentValue);
-    const isPotentialLifeThreatening = potentialLifeThreateningIncidents.has(incidentValue);
-
-    if (isLifeThreatening) {
-      ['none', 'doctor', 'pharmacy'].forEach((value) => {
-        const wrapper = followUpOptionWrappers.get(value);
-        if (wrapper) {
-          wrapper.classList.add('hidden');
-        }
-      });
-      const ambulanceOption = followUpOptions.find((option) => option.value === 'ambulance');
-      if (ambulanceOption) {
-        ambulanceOption.checked = true;
-      }
-      followUpWarning.textContent = followUpWarningMessages.lifeThreatening;
-      followUpWarning.classList.remove('hidden');
-    } else {
-      if (isPotentialLifeThreatening) {
-        followUpWarning.textContent = followUpWarningMessages.potentialLifeThreatening;
-        followUpWarning.classList.remove('hidden');
-      } else if (seriousIncidents.has(incidentValue)) {
-        followUpWarning.textContent = followUpWarningMessages.serious;
-        followUpWarning.classList.remove('hidden');
-      }
-      if (minorIncidentDefaults.has(incidentValue)) {
-        const defaultOption = followUpOptions.find((option) => option.value === 'none');
-        if (defaultOption) {
-          defaultOption.checked = true;
-        }
-      }
-    }
-  };
-
-  followUpOptions.forEach((option) => {
-    option.addEventListener('change', () => {
-      if (option.value === 'other' && option.checked) {
-        followUpOtherWrapper.classList.remove('hidden');
-        followUpOtherInput.focus();
-      } else if (option.checked) {
-        followUpOtherWrapper.classList.add('hidden');
-        followUpOtherInput.value = '';
-      }
-    });
-  });
-
-  const updateFieldVisibility = (value) => {
-    if (value) {
-      basicFields.classList.remove('hidden');
-    } else {
-      basicFields.classList.add('hidden');
-    }
-
-    const requiredVitals = incidentVitalRequirements[value] || [];
-    currentRequiredVitals = new Set(requiredVitals);
-
-    if (currentRequiredVitals.size) {
-      vitalsFields.classList.remove('hidden');
-    } else {
-      vitalsFields.classList.add('hidden');
-    }
-
-    Object.entries(vitalFieldMap).forEach(([key, field]) => {
-      if (currentRequiredVitals.has(key)) {
-        field.classList.remove('hidden');
-        evaluateVital(key);
-      } else {
-        field.classList.add('hidden');
-        vitalInputMap[key].value = '';
-        setVitalWarning(key, '');
-      }
-    });
-
-    if (incidentsRequiringTreatment.has(value)) {
-      treatmentFields.classList.remove('hidden');
-    } else {
-      treatmentFields.classList.add('hidden');
-      treatmentInput.value = '';
-    }
-
-    if (workplaceEligibleIncidents.has(value)) {
-      workplaceSection.classList.remove('hidden');
-    } else {
-      workplaceSection.classList.add('hidden');
-      workplaceCheckbox.checked = false;
-      workplaceWarning.classList.add('hidden');
-    }
-
-    if (value) {
-      followUpSection.classList.remove('hidden');
-      adjustFollowUpOptions(value);
-      const actions = treatmentQuickActionMap[value];
-      treatmentQuickActions.innerHTML = '';
-      if (actions && actions.length) {
-        treatmentQuickActions.classList.remove('hidden');
-        treatmentQuickActions.dataset.for = 'treatment';
-        actions.forEach((label) => {
-          const button = createQuickActionButton(label);
-          button.addEventListener('click', () => applyTreatmentQuickAction(label));
-          treatmentQuickActions.appendChild(button);
-        });
-      } else {
-        treatmentQuickActions.classList.add('hidden');
-        treatmentQuickActions.removeAttribute('data-for');
-      }
-    } else {
-      followUpSection.classList.add('hidden');
-      clearFollowUpSelection();
-      treatmentQuickActions.classList.add('hidden');
-      treatmentQuickActions.innerHTML = '';
-      treatmentQuickActions.removeAttribute('data-for');
-    }
-  };
-
-  incidentCategory.addEventListener('change', () => {
-    const selectedCategory = incidentCategory.value;
-    setIncidentTypeOptions(selectedCategory);
-    incidentType.value = '';
-    updateFieldVisibility('');
-  });
-
-  incidentType.addEventListener('change', () => {
-    updateFieldVisibility(incidentType.value);
-  });
-
-  form.addEventListener('submit', (e) => {
-    e.preventDefault();
-
-    const errors = [];
-    const incidentValue = incidentType.value;
-
-    if (!incidentValue) {
-      errors.push('Select an incident type.');
-    }
-
-    if (!basicFields.classList.contains('hidden')) {
-      if (!locationInput.value.trim()) {
-        errors.push('Provide the incident location.');
-      }
-
-      if (!descriptionInput.value.trim()) {
-        errors.push('Provide a brief description of the incident.');
-      }
-    }
-
-    if (currentRequiredVitals.size) {
-      currentRequiredVitals.forEach((key) => evaluateVital(key));
-      if (currentRequiredVitals.has('bloodPressure') && !bloodPressureInput.value.trim()) {
-        errors.push('Enter the patient\'s blood pressure.');
-      }
-
-      const numericVitalChecks = [
-        { key: 'spo2', label: 'SpO₂', min: 0, max: 100 },
-        { key: 'heartRate', label: 'Heart rate', min: 20, max: 250 },
-        { key: 'respiratoryRate', label: 'Respiratory rate', min: 4, max: 80 },
-        { key: 'temperature', label: 'Temperature (°C)', min: 30, max: 45 },
-        { key: 'bloodGlucose', label: 'Blood glucose', min: 20, max: 600 }
-      ];
-
-      numericVitalChecks
-        .filter(({ key }) => currentRequiredVitals.has(key))
-        .forEach(({ key, label, min, max }) => {
-          const input = vitalInputMap[key];
-          const value = input.value.trim();
-          if (!value) {
-            errors.push(`Enter ${label.toLowerCase()}.`);
-          } else {
-            const normalizedValue = value.toLowerCase();
-            const allowedValues = allowedNonNumericVitalValues[key] || [];
-            if (allowedValues.includes(normalizedValue)) {
-              return;
-            }
-            const numericValue = Number(value);
-            if (!Number.isFinite(numericValue)) {
-              errors.push(`${label} must be a number.`);
-            } else if (numericValue < min || numericValue > max) {
-              errors.push(`${label} should be between ${min} and ${max}.`);
-            }
-          }
-        });
-
-      if (currentRequiredVitals.has('painScore')) {
-        const painValue = painScoreInput.value.trim();
-        if (!painValue) {
-          errors.push('Record the patient\'s pain score.');
-        } else {
-          const normalizedPain = painValue.toLowerCase();
-          const allowedPainValues = allowedNonNumericVitalValues.painScore || [];
-          if (!allowedPainValues.includes(normalizedPain)) {
-            const numericPain = Number(painValue);
-            if (!Number.isInteger(numericPain) || numericPain < 0 || numericPain > 10) {
-              errors.push('Pain score must be a whole number between 0 and 10.');
-            }
-          }
-        }
-      }
-
-      if (currentRequiredVitals.has('pupilResponse') && !pupilResponseInput.value.trim()) {
-        errors.push('Note the pupil response.');
-      }
-    }
-
-    if (!treatmentFields.classList.contains('hidden')) {
-      if (!treatmentInput.value.trim()) {
-        errors.push('Document any treatment or interventions provided.');
-      }
-    }
-
-    const selectedFollowUp = followUpOptions.find((option) => option.checked)?.value || '';
-    if (seriousIncidents.has(incidentValue)) {
-      if (!selectedFollowUp || selectedFollowUp === 'none') {
-        errors.push('Select a patient follow-up / disposition for this incident.');
-      }
-    }
-
-    if (lifeThreateningIncidents.has(incidentValue) && selectedFollowUp !== 'ambulance') {
-      errors.push('Life-threatening incidents require selecting ambulance transport.');
-    }
-
-    if (selectedFollowUp === 'other' && !followUpOtherInput.value.trim()) {
-      errors.push('Provide notes for the selected follow-up option.');
-    }
-
-    if (errors.length) {
-      alert(`Please correct the following:\n\n- ${errors.join('\n- ')}`);
-      return;
-    }
-
-    alert('Incident submitted! (mockup)');
-    form.reset();
-    incidentCategory.value = '';
-    setIncidentTypeOptions('');
-    clearFollowUpSelection();
-    updateFieldVisibility('');
-  });
-
-  setIncidentTypeOptions('');
-  updateFieldVisibility(incidentType.value);
-</script>
+</div>
+
+<div id="dashboardPane" class="tab-pane">
+  <section class="dashboard">
+    <header class="dashboard-header">
+      <div>
+        <h3>Incident Overview</h3>
+        <p class="dashboard-subtitle">High-level metrics and trends from locally stored reports.</p>
+      </div>
+      <button type="button" id="refreshDashboard" class="dashboard-refresh">Refresh metrics</button>
+    </header>
+
+    <div class="dashboard-cards">
+      <article class="dashboard-card">
+        <h4>Total incidents</h4>
+        <p id="dashboardTotalIncidents" class="dashboard-card__value">0</p>
+        <span class="dashboard-card__hint">Stored in this browser</span>
+      </article>
+      <article class="dashboard-card">
+        <h4>Logged in last 24h</h4>
+        <p id="dashboardLast24Hours" class="dashboard-card__value">0</p>
+        <span class="dashboard-card__hint">Based on incident time or submission</span>
+      </article>
+      <article class="dashboard-card">
+        <h4>Life-threatening</h4>
+        <p id="dashboardLifeThreatening" class="dashboard-card__value">0</p>
+        <span class="dashboard-card__hint">Flagged as immediate risk</span>
+      </article>
+      <article class="dashboard-card">
+        <h4>Serious (non-life)</h4>
+        <p id="dashboardSerious" class="dashboard-card__value">0</p>
+        <span class="dashboard-card__hint">Requires significant follow-up</span>
+      </article>
+      <article class="dashboard-card">
+        <h4>Peacetime context</h4>
+        <p id="dashboardPeaceCount" class="dashboard-card__value">0</p>
+        <span class="dashboard-card__hint">Operational context = Peacetime</span>
+      </article>
+      <article class="dashboard-card">
+        <h4>Wartime context</h4>
+        <p id="dashboardWarCount" class="dashboard-card__value">0</p>
+        <span class="dashboard-card__hint">Operational context = Wartime</span>
+      </article>
+      <article class="dashboard-card">
+        <h4>Active incidents</h4>
+        <p id="dashboardActiveIncidents" class="dashboard-card__value">0</p>
+        <span class="dashboard-card__hint">Marked as active / ongoing</span>
+      </article>
+      <article class="dashboard-card">
+        <h4>Completed / handed off</h4>
+        <p id="dashboardCompletedIncidents" class="dashboard-card__value">0</p>
+        <span class="dashboard-card__hint">Status set to completed or handed off</span>
+      </article>
+    </div>
+
+    <div class="dashboard-panels">
+      <section class="dashboard-panel">
+        <h4>Incidents by category</h4>
+        <ul id="dashboardCategoryList" class="dashboard-list"></ul>
+      </section>
+      <section class="dashboard-panel">
+        <h4>Status overview</h4>
+        <ul id="dashboardStatusList" class="dashboard-list"></ul>
+      </section>
+      <section class="dashboard-panel">
+        <h4>Top incident types</h4>
+        <ul id="dashboardIncidentTypeList" class="dashboard-list"></ul>
+      </section>
+      <section class="dashboard-panel">
+        <h4>Follow-up disposition</h4>
+        <ul id="dashboardFollowUpList" class="dashboard-list"></ul>
+      </section>
+    </div>
+
+    <section class="dashboard-panel dashboard-panel--full">
+      <h4>Most recent incidents</h4>
+      <ul id="dashboardRecentList" class="dashboard-recent"></ul>
+    </section>
+  </section>
+</div>
+
+<div id="viewIncidentsPane" class="tab-pane">
+  <section class="incident-history">
+    <h3>Stored Incidents</h3>
+    <p class="history-hint">Incidents are stored locally in this browser. Switch to the Add tab to log new reports.</p>
+    <div class="filters-panel">
+      <div class="filter-group">
+        <label for="filterSearch">Search keywords</label>
+        <input type="text" id="filterSearch" placeholder="Search name, roster, description, treatments...">
+      </div>
+      <div class="filter-row">
+        <div class="filter-group">
+          <label for="filterCategory">Category</label>
+          <select id="filterCategory">
+            <option value="">All categories</option>
+          </select>
+        </div>
+      <div class="filter-group">
+        <label for="filterStatus">Status</label>
+        <select id="filterStatus">
+          <option value="">All statuses</option>
+          <option value="active">Active / ongoing care</option>
+          <option value="monitoring">Monitoring / awaiting follow-up</option>
+          <option value="completed">Completed / handed off</option>
+        </select>
+      </div>
+        <div class="filter-group">
+          <label for="filterContext">Operational context</label>
+          <select id="filterContext">
+            <option value="">All contexts</option>
+            <option value="peace">Peacetime</option>
+            <option value="war">Wartime</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="filterDisposition">Disposition</label>
+          <select id="filterDisposition">
+            <option value="">All follow-ups</option>
+          </select>
+        </div>
+      </div>
+      <div class="filter-row">
+        <div class="filter-group">
+          <label for="filterSeriousness">Seriousness</label>
+          <select id="filterSeriousness">
+            <option value="">Any</option>
+            <option value="lifeThreatening">Life-threatening</option>
+            <option value="serious">Serious</option>
+            <option value="potentialLifeThreatening">Potentially critical</option>
+            <option value="minor">Minor</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="filterTimeFrom">Incident after</label>
+          <input type="datetime-local" id="filterTimeFrom">
+        </div>
+        <div class="filter-group">
+          <label for="filterTimeTo">Incident before</label>
+          <input type="datetime-local" id="filterTimeTo">
+        </div>
+      </div>
+      <div class="filters-actions">
+        <button type="button" id="applyFilters">Apply filters</button>
+        <button type="button" id="clearFilters">Clear filters</button>
+      </div>
+    </div>
+    <div class="history-actions">
+      <button type="button" id="printIncidents">Export log (PDF)</button>
+      <button type="button" id="downloadIncidents">Download log (JSON)</button>
+      <button type="button" id="clearIncidents">Clear stored incidents</button>
+    </div>
+    <div id="incidentList" class="incident-list"></div>
+  </section>
+</div>
+
+<div id="guidePane" class="tab-pane">
+  <section class="guidebook">
+    <div class="guidebook-header">
+      <div class="guidebook-search">
+        <label for="guideSearch">Search reference</label>
+        <input type="search" id="guideSearch" placeholder="Search protocols, mnemonics, equipment...">
+      </div>
+      <div class="guidebook-filters">
+        <label for="guideCategory">Category</label>
+        <select id="guideCategory">
+          <option value="">All categories</option>
+        </select>
+      </div>
+    </div>
+    <div id="guideResults" class="guidebook-results"></div>
+  </section>
+</div>
+
+<div id="printContainer" class="print-container"></div>
+
+<footer class="app-footer">
+  <span>Advanced Dynamic Incident Report</span>
+  <span id="appVersionDisplay"></span>
+</footer>
+
+<script src="script.js"></script>
 
 </body>
 </html>

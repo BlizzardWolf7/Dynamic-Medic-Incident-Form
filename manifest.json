@@ -1,0 +1,19 @@
+{
+  "name": "Advanced Dynamic Incident Report",
+  "short_name": "IncidentForm",
+  "description": "Offline-capable incident logging for medical and military response teams.",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#2563eb",
+  "lang": "en",
+  "icons": [
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
+
