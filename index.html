@@ -14,11 +14,15 @@
 </head>
 <body>
 
-<h2>Advanced Dynamic Incident Report Form</h2>
+<div class="header-container">
+  <h2>Advanced Dynamic Incident Report Form</h2>
+  <button type="button" id="settingsButton" class="settings-button" aria-label="Open settings">⚙️</button>
+</div>
 <div class="tab-container">
   <button type="button" class="tab-button active" data-tab="add">Add Incident</button>
   <button type="button" class="tab-button" data-tab="dashboard">Dashboard</button>
   <button type="button" class="tab-button" data-tab="view">View Incidents</button>
+  <button type="button" class="tab-button" data-tab="patients">Patients</button>
   <button type="button" class="tab-button" data-tab="guide">Quick Reference</button>
 </div>
 
@@ -66,6 +70,14 @@
   </div>
 
   <div id="basicFields" class="hidden">
+      <div class="label-with-tip">
+        <label for="patientSelect">Select patient:</label>
+        <button type="button" class="info-tip" data-tooltip="Select an existing patient to auto-fill their information, or choose 'New patient' to enter manually." aria-label="Patient selection information">i</button>
+      </div>
+      <select id="patientSelect">
+        <option value="">--Select or add new patient--</option>
+        <option value="__new__">+ Add new patient</option>
+      </select>
       <div class="label-with-tip">
         <label for="patientName">Patient name:</label>
         <button type="button" class="info-tip" data-tooltip="Record the casualty's full name or identifier for follow-up documentation." aria-label="Patient name information">i</button>
@@ -492,6 +504,115 @@
   </section>
 </div>
 
+<div id="patientsPane" class="tab-pane">
+  <section class="patient-dashboard">
+    <div class="patient-dashboard__header">
+      <h3>Patient Management</h3>
+      <div class="patient-dashboard__actions">
+        <button type="button" id="exportPatientsButton" class="patient-dashboard__action-button">Export Patients</button>
+        <button type="button" id="addPatientButton" class="patient-dashboard__add-button">+ Add Patient</button>
+      </div>
+    </div>
+    <div class="patient-dashboard__search">
+      <label for="patientSearch">Search patients</label>
+      <input type="search" id="patientSearch" placeholder="Search by name, MA number, unit...">
+    </div>
+    <div id="patientList" class="patient-list"></div>
+  </section>
+</div>
+
+<!-- Patient Modal -->
+<div id="patientModal" class="settings-modal hidden">
+  <div class="settings-modal__overlay"></div>
+  <div class="settings-modal__content">
+    <div class="settings-modal__header">
+      <h3 id="patientModalTitle">Add Patient</h3>
+      <button type="button" id="closePatientModalButton" class="settings-modal__close" aria-label="Close patient form">×</button>
+    </div>
+    <div class="settings-modal__body">
+      <form id="patientForm">
+        <div class="form-field">
+          <label for="patientFormName">Full Name *</label>
+          <input type="text" id="patientFormName" required placeholder="Full name">
+        </div>
+        <div class="form-field">
+          <label for="patientFormMaNumber">MA Number / Service Number</label>
+          <input type="text" id="patientFormMaNumber" placeholder="Roster ID, MA number, or service number">
+        </div>
+        <div class="form-field">
+          <label for="patientFormUnit">Unit / Team / Role</label>
+          <input type="text" id="patientFormUnit" placeholder="Unit, team, or role">
+        </div>
+        <div class="form-field">
+          <label for="patientFormDob">Date of Birth</label>
+          <input type="date" id="patientFormDob">
+        </div>
+        <div class="form-field">
+          <label for="patientFormImage">Patient Photo</label>
+          <input type="file" id="patientFormImage" accept="image/*" style="display: none;">
+          <div class="patient-image-upload">
+            <button type="button" id="patientImageUploadButton" class="patient-image-upload__button">Choose Image</button>
+            <div id="patientImagePreview" class="patient-image-preview hidden">
+              <img id="patientImagePreviewImg" src="" alt="Patient photo preview">
+              <button type="button" id="patientImageRemoveButton" class="patient-image-preview__remove">×</button>
+            </div>
+          </div>
+        </div>
+        <div class="form-field">
+          <label for="patientFormSex">Sex</label>
+          <select id="patientFormSex">
+            <option value="">--Select--</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+            <option value="other">Other</option>
+            <option value="prefer-not-to-say">Prefer not to say</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label for="patientFormAllergies">Allergies</label>
+          <div class="field-hints" data-for="patientFormAllergies">
+            <button type="button" data-value="Penicillin" data-severity="caution">Penicillin</button>
+            <button type="button" data-value="Latex" data-severity="caution">Latex</button>
+            <button type="button" data-value="NSAIDs" data-severity="caution">NSAIDs</button>
+            <button type="button" data-value="Sulfa drugs" data-severity="caution">Sulfa drugs</button>
+            <button type="button" data-value="Iodine" data-severity="caution">Iodine</button>
+            <button type="button" data-value="Shellfish" data-severity="caution">Shellfish</button>
+            <button type="button" data-value="Nuts" data-severity="critical">Nuts</button>
+            <button type="button" data-value="None known" data-severity="normal">None known</button>
+          </div>
+          <textarea id="patientFormAllergies" rows="2" placeholder="List known allergies"></textarea>
+        </div>
+        <div class="form-field">
+          <label for="patientFormMeds">Regular Medications</label>
+          <div class="field-hints" data-for="patientFormMeds">
+            <button type="button" data-value="Aspirin" data-severity="info">Aspirin</button>
+            <button type="button" data-value="Metformin" data-severity="info">Metformin</button>
+            <button type="button" data-value="Lisinopril" data-severity="info">Lisinopril</button>
+            <button type="button" data-value="Atorvastatin" data-severity="info">Atorvastatin</button>
+            <button type="button" data-value="Warfarin" data-severity="critical">Warfarin</button>
+            <button type="button" data-value="Insulin" data-severity="critical">Insulin</button>
+            <button type="button" data-value="Beta-blocker" data-severity="info">Beta-blocker</button>
+            <button type="button" data-value="None" data-severity="normal">None</button>
+          </div>
+          <textarea id="patientFormMeds" rows="2" placeholder="List regular medications"></textarea>
+        </div>
+        <div class="form-field">
+          <label for="patientFormMedicalHistory">Medical History</label>
+          <textarea id="patientFormMedicalHistory" rows="3" placeholder="Relevant medical history"></textarea>
+        </div>
+        <div class="form-field">
+          <label for="patientFormEmergencyContact">Emergency Contact</label>
+          <input type="text" id="patientFormEmergencyContact" placeholder="Name and contact information">
+        </div>
+        <div class="form-actions">
+          <button type="button" id="cancelPatientButton" class="form-button form-button--secondary">Cancel</button>
+          <button type="submit" class="form-button form-button--primary">Save Patient</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 <div id="guidePane" class="tab-pane">
   <section class="guidebook">
     <div class="guidebook-header">
@@ -512,11 +633,79 @@
 
 <div id="printContainer" class="print-container"></div>
 
+<!-- Settings Modal -->
+<div id="settingsModal" class="settings-modal hidden">
+  <div class="settings-modal__overlay"></div>
+  <div class="settings-modal__content">
+    <div class="settings-modal__header">
+      <h3>Settings</h3>
+      <button type="button" id="closeSettingsButton" class="settings-modal__close" aria-label="Close settings">×</button>
+    </div>
+    <div class="settings-modal__body">
+      <div class="settings-option">
+        <label for="militaryFeaturesToggle" class="settings-option__label">
+          <span>Enable Military Features</span>
+          <span class="settings-option__hint">Show operational context, service number, and military incident types</span>
+        </label>
+        <label class="settings-toggle">
+          <input type="checkbox" id="militaryFeaturesToggle">
+          <span class="settings-toggle__slider"></span>
+        </label>
+      </div>
+      
+      <div class="settings-section">
+        <h4 class="settings-section__title">Import Incidents</h4>
+        <p class="settings-section__description">Import incidents from a previously exported JSON file. You can merge with existing incidents or replace them entirely.</p>
+        <div class="settings-import">
+          <input type="file" id="importFileInput" accept=".json" class="settings-import__input">
+          <label for="importFileInput" class="settings-import__label">
+            <span>Choose JSON file</span>
+          </label>
+          <div class="settings-import__options">
+            <label class="settings-import__radio">
+              <input type="radio" name="importMode" value="merge" checked>
+              <span>Merge with existing incidents</span>
+            </label>
+            <label class="settings-import__radio">
+              <input type="radio" name="importMode" value="replace">
+              <span>Replace all incidents</span>
+            </label>
+          </div>
+          <button type="button" id="importIncidentsButton" class="settings-import__button" disabled>Import Incidents</button>
+        </div>
+      </div>
+      
+      <div class="settings-section">
+        <h4 class="settings-section__title">Import Patients</h4>
+        <p class="settings-section__description">Import patients from a previously exported JSON file. You can merge with existing patients or replace them entirely.</p>
+        <div class="settings-import">
+          <input type="file" id="importPatientsFileInput" accept=".json" class="settings-import__input">
+          <label for="importPatientsFileInput" class="settings-import__label">
+            <span>Choose JSON file</span>
+          </label>
+          <div class="settings-import__options">
+            <label class="settings-import__radio">
+              <input type="radio" name="importPatientsMode" value="merge" checked>
+              <span>Merge with existing patients</span>
+            </label>
+            <label class="settings-import__radio">
+              <input type="radio" name="importPatientsMode" value="replace">
+              <span>Replace all patients</span>
+            </label>
+          </div>
+          <button type="button" id="importPatientsButton" class="settings-import__button" disabled>Import Patients</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <footer class="app-footer">
   <span>Advanced Dynamic Incident Report</span>
   <span id="appVersionDisplay"></span>
 </footer>
 
+<script src="db.js"></script>
 <script src="script.js"></script>
 
 </body>

@@ -1,5 +1,5 @@
 
-const APP_VERSION = '1.1.0';
+const APP_VERSION = '1.1.1';
 
 const incidentCategory = document.getElementById('incidentCategory');
 const incidentType = document.getElementById('incidentType');
@@ -13,6 +13,7 @@ const workplaceWarning = document.getElementById('workplaceWarning');
 
 const patientNameInput = document.getElementById('patientName');
 const rosterNumberInput = document.getElementById('rosterNumber');
+const patientSelect = document.getElementById('patientSelect');
 const incidentTimeInput = document.getElementById('incidentDateTime');
 const incidentTimeQuickActions = document.getElementById('incidentTimeQuickActions');
 const locationInput = document.getElementById('location');
@@ -53,6 +54,7 @@ const tabPanes = {
   add: document.getElementById('addIncidentPane'),
   dashboard: document.getElementById('dashboardPane'),
   view: document.getElementById('viewIncidentsPane'),
+  patients: document.getElementById('patientsPane'),
   guide: document.getElementById('guidePane')
 };
 const incidentListContainer = document.getElementById('incidentList');
@@ -94,8 +96,1074 @@ const guideSearchInput = document.getElementById('guideSearch');
 const guideCategorySelect = document.getElementById('guideCategory');
 const guideResultsContainer = document.getElementById('guideResults');
 const INCIDENT_STORAGE_KEY = 'incidentFormRecords';
+const PATIENT_STORAGE_KEY = 'incidentFormPatients';
+const SETTINGS_STORAGE_KEY = 'incidentFormSettings';
 let incidentRecords = [];
 let filteredRecords = [];
+let patientRecords = [];
+let filteredPatients = [];
+
+// Settings functionality
+const settingsModal = document.getElementById('settingsModal');
+const settingsButton = document.getElementById('settingsButton');
+const closeSettingsButton = document.getElementById('closeSettingsButton');
+const militaryFeaturesToggle = document.getElementById('militaryFeaturesToggle');
+const importFileInput = document.getElementById('importFileInput');
+const importIncidentsButton = document.getElementById('importIncidentsButton');
+const importPatientsFileInput = document.getElementById('importPatientsFileInput');
+const importPatientsButton = document.getElementById('importPatientsButton');
+const exportPatientsButton = document.getElementById('exportPatientsButton');
+const operationalContextWrapper = operationalContext?.closest('.label-with-tip')?.parentElement || 
+  (operationalContext ? operationalContext.previousElementSibling?.nextElementSibling || null : null);
+const rosterNumberWrapper = rosterNumberInput?.closest('.label-with-tip')?.parentElement || 
+  (rosterNumberInput ? rosterNumberInput.previousElementSibling?.previousElementSibling || null : null);
+
+const getMilitaryFeaturesEnabled = async () => {
+  try {
+    const settingsData = await window.DB.get(window.DB.STORES.SETTINGS, 'settings');
+    if (settingsData && settingsData.value) {
+      return settingsData.value.militaryFeaturesEnabled !== false; // Default to true if not set
+    }
+  } catch (error) {
+    console.error('Unable to read settings from storage', error);
+  }
+  return true; // Default to enabled
+};
+
+const saveMilitaryFeaturesSetting = async (enabled) => {
+  try {
+    const settings = { militaryFeaturesEnabled: enabled };
+    await window.DB.put(window.DB.STORES.SETTINGS, {
+      key: 'settings',
+      value: settings
+    });
+  } catch (error) {
+    console.error('Unable to save settings to storage', error);
+  }
+};
+
+const toggleMilitaryFeatures = (enabled) => {
+  // Hide/show operational context
+  const operationalContextLabel = document.querySelector('label[for="operationalContext"]')?.closest('.label-with-tip');
+  if (operationalContextLabel) {
+    operationalContextLabel.classList.toggle('military-hidden', !enabled);
+  }
+  if (operationalContext) {
+    operationalContext.classList.toggle('military-hidden', !enabled);
+  }
+
+  // Hide/show roster/MA number field
+  const rosterNumberLabel = document.querySelector('label[for="rosterNumber"]')?.closest('.label-with-tip');
+  if (rosterNumberLabel) {
+    rosterNumberLabel.classList.toggle('military-hidden', !enabled);
+  }
+  if (rosterNumberInput) {
+    rosterNumberInput.classList.toggle('military-hidden', !enabled);
+  }
+
+  // Hide/show military follow-up options (war context)
+  const warFollowUpOptions = document.querySelectorAll('.follow-up-option[data-context="war"]');
+  warFollowUpOptions.forEach((option) => {
+    option.classList.toggle('military-hidden', !enabled);
+  });
+
+  // Hide/show military incident category
+  if (incidentCategory) {
+    const militaryOption = Array.from(incidentCategory.options).find(
+      (opt) => opt.value === 'military'
+    );
+    if (militaryOption) {
+      militaryOption.classList.toggle('military-hidden', !enabled);
+      if (!enabled && incidentCategory.value === 'military') {
+        incidentCategory.value = '';
+        setIncidentTypeOptions('');
+        incidentType.value = '';
+        updateFieldVisibility('');
+      }
+    }
+  }
+
+  // Hide/show military category in filter
+  if (filterCategorySelect) {
+    const militaryFilterOption = Array.from(filterCategorySelect.options).find(
+      (opt) => opt.value === 'military'
+    );
+    if (militaryFilterOption) {
+      militaryFilterOption.classList.toggle('military-hidden', !enabled);
+      if (!enabled && filterCategorySelect.value === 'military') {
+        filterCategorySelect.value = '';
+      }
+    }
+  }
+
+  // If military features are disabled and operational context is set to war, reset to peace
+  if (!enabled && operationalContext && operationalContext.value === 'war') {
+    operationalContext.value = 'peace';
+    updateFollowUpContextVisibility();
+    adjustFollowUpOptions(incidentType.value);
+  }
+
+  // Update follow-up context visibility
+  updateFollowUpContextVisibility();
+};
+
+const openSettingsModal = () => {
+  if (settingsModal) {
+    settingsModal.classList.remove('hidden');
+    if (militaryFeaturesToggle) {
+      militaryFeaturesToggle.checked = getMilitaryFeaturesEnabled();
+    }
+  }
+};
+
+const closeSettingsModal = () => {
+  if (settingsModal) {
+    settingsModal.classList.add('hidden');
+  }
+};
+
+// Initialize settings on page load
+const initializeSettings = async () => {
+  const enabled = await getMilitaryFeaturesEnabled();
+  if (militaryFeaturesToggle) {
+    militaryFeaturesToggle.checked = enabled;
+  }
+  toggleMilitaryFeatures(enabled);
+};
+
+// Event listeners for settings
+if (settingsButton) {
+  settingsButton.addEventListener('click', openSettingsModal);
+}
+
+if (closeSettingsButton) {
+  closeSettingsButton.addEventListener('click', closeSettingsModal);
+}
+
+if (settingsModal) {
+  const overlay = settingsModal.querySelector('.settings-modal__overlay');
+  if (overlay) {
+    overlay.addEventListener('click', closeSettingsModal);
+  }
+  // Close on Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !settingsModal.classList.contains('hidden')) {
+      closeSettingsModal();
+    }
+  });
+}
+
+if (militaryFeaturesToggle) {
+  militaryFeaturesToggle.addEventListener('change', async (e) => {
+    const enabled = e.target.checked;
+    toggleMilitaryFeatures(enabled);
+    await saveMilitaryFeaturesSetting(enabled);
+    pushToast(
+      enabled ? 'Military features enabled.' : 'Military features disabled.',
+      { type: 'info' }
+    );
+  });
+}
+
+// Import functionality
+const normalizeImportedIncident = (record) => {
+  const statusValue = record?.status?.value ?? record?.status;
+  const normalizedStatusValue =
+    typeof statusValue === 'string' && STATUS_CONFIG[statusValue] ? statusValue : 'active';
+  const status = {
+    value: normalizedStatusValue,
+    label: STATUS_CONFIG[normalizedStatusValue].label
+  };
+
+  let avpuValue =
+    record?.avpu?.value ??
+    (typeof record?.avpu === 'string' ? record.avpu : '');
+  if (!avpuValue && typeof record?.vitals?.avpu === 'string') {
+    avpuValue = record.vitals.avpu;
+  }
+  const avpu =
+    avpuValue && typeof avpuValue === 'string'
+      ? {
+          value: avpuValue,
+          label: record?.avpu?.label || getAvpuLabel(avpuValue)
+        }
+      : null;
+
+  return {
+    ...record,
+    status,
+    avpu
+  };
+};
+
+const importIncidents = (file, importMode) => {
+  const reader = new FileReader();
+  
+  reader.onload = async (e) => {
+    try {
+      const fileContent = e.target.result;
+      const parsed = JSON.parse(fileContent);
+      
+      // Validate structure - check if it's the export format or just an array
+      let incidentsToImport = [];
+      if (Array.isArray(parsed)) {
+        // Direct array of incidents
+        incidentsToImport = parsed;
+      } else if (parsed.incidents && Array.isArray(parsed.incidents)) {
+        // Export format with metadata
+        incidentsToImport = parsed.incidents;
+      } else {
+        pushToast('Invalid file format. Expected an array of incidents or an export file.', { type: 'error' });
+        return;
+      }
+
+      if (!incidentsToImport.length) {
+        pushToast('The file contains no incidents to import.', { type: 'warning' });
+        return;
+      }
+
+      // Normalize imported incidents
+      const normalizedIncidents = incidentsToImport.map(normalizeImportedIncident);
+
+      // Handle merge vs replace
+      if (importMode === 'replace') {
+        const confirmed = confirm(
+          `This will replace all ${incidentRecords.length} existing incidents with ${normalizedIncidents.length} imported incidents. Continue?`
+        );
+        if (!confirmed) {
+          return;
+        }
+        incidentRecords = normalizedIncidents;
+        pushToast(`Replaced all incidents with ${normalizedIncidents.length} imported incident(s).`, { type: 'success' });
+      } else {
+        // Merge mode - add new incidents, avoiding duplicates by ID
+        const existingIds = new Set(incidentRecords.map((r) => r.id));
+        const newIncidents = normalizedIncidents.filter((incident) => !existingIds.has(incident.id));
+        const duplicateCount = normalizedIncidents.length - newIncidents.length;
+        
+        if (newIncidents.length === 0) {
+          pushToast(
+            `All ${normalizedIncidents.length} incidents in the file already exist. No new incidents imported.`,
+            { type: 'warning' }
+          );
+          return;
+        }
+
+        incidentRecords.push(...newIncidents);
+        
+        if (duplicateCount > 0) {
+          pushToast(
+            `Imported ${newIncidents.length} new incidents. ${duplicateCount} duplicate(s) skipped.`,
+            { type: 'info', duration: 5000 }
+          );
+        } else {
+          pushToast(
+            `Successfully imported ${newIncidents.length} incident(s).`,
+            { type: 'success' }
+          );
+        }
+      }
+
+      // Save to storage and refresh UI
+      await saveIncidentsToStorage();
+      renderDashboard();
+      updateDispositionFilterOptions();
+      applyFilters();
+      exitEditingMode({ notify: false, resetForm: true });
+
+      // Reset file input
+      if (importFileInput) {
+        importFileInput.value = '';
+      }
+      if (importIncidentsButton) {
+        importIncidentsButton.disabled = true;
+      }
+      if (importFileInput?.nextElementSibling?.querySelector('span')) {
+        importFileInput.nextElementSibling.querySelector('span').textContent = 'Choose JSON file';
+      }
+    } catch (error) {
+      console.error('Error importing incidents:', error);
+      pushToast('Failed to import incidents. The file may be corrupted or invalid JSON.', { type: 'error' });
+    }
+  };
+
+  reader.onerror = () => {
+    pushToast('Failed to read the file. Please try again.', { type: 'error' });
+  };
+
+  reader.readAsText(file);
+};
+
+if (importFileInput) {
+  importFileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (importIncidentsButton) {
+        importIncidentsButton.disabled = false;
+      }
+      if (importFileInput.nextElementSibling?.querySelector('span')) {
+        importFileInput.nextElementSibling.querySelector('span').textContent = file.name;
+      }
+    } else {
+      if (importIncidentsButton) {
+        importIncidentsButton.disabled = true;
+      }
+      if (importFileInput.nextElementSibling?.querySelector('span')) {
+        importFileInput.nextElementSibling.querySelector('span').textContent = 'Choose JSON file';
+      }
+    }
+  });
+}
+
+if (importIncidentsButton) {
+  importIncidentsButton.addEventListener('click', () => {
+    const file = importFileInput?.files[0];
+    if (!file) {
+      pushToast('Please select a file to import.', { type: 'warning' });
+      return;
+    }
+
+    const importMode = document.querySelector('input[name="importMode"]:checked')?.value || 'merge';
+    importIncidents(file, importMode);
+  });
+}
+
+// Patient Management
+const patientModal = document.getElementById('patientModal');
+const patientForm = document.getElementById('patientForm');
+const addPatientButton = document.getElementById('addPatientButton');
+const closePatientModalButton = document.getElementById('closePatientModalButton');
+const cancelPatientButton = document.getElementById('cancelPatientButton');
+const patientModalTitle = document.getElementById('patientModalTitle');
+const patientSearchInput = document.getElementById('patientSearch');
+const patientListContainer = document.getElementById('patientList');
+const patientFormName = document.getElementById('patientFormName');
+const patientFormMaNumber = document.getElementById('patientFormMaNumber');
+const patientFormUnit = document.getElementById('patientFormUnit');
+const patientFormDob = document.getElementById('patientFormDob');
+const patientFormSex = document.getElementById('patientFormSex');
+const patientFormAllergies = document.getElementById('patientFormAllergies');
+const patientFormMeds = document.getElementById('patientFormMeds');
+const patientFormMedicalHistory = document.getElementById('patientFormMedicalHistory');
+const patientFormEmergencyContact = document.getElementById('patientFormEmergencyContact');
+const patientFormImage = document.getElementById('patientFormImage');
+const patientImageUploadButton = document.getElementById('patientImageUploadButton');
+const patientImagePreview = document.getElementById('patientImagePreview');
+const patientImagePreviewImg = document.getElementById('patientImagePreviewImg');
+const patientImageRemoveButton = document.getElementById('patientImageRemoveButton');
+
+let editingPatientId = null;
+let currentPatientImageId = null;
+let currentPatientImageBlob = null;
+
+const loadPatientsFromStorage = async () => {
+  try {
+    const stored = await window.DB.getAll(window.DB.STORES.PATIENTS);
+    if (Array.isArray(stored)) {
+      patientRecords = stored;
+    } else {
+      patientRecords = [];
+    }
+  } catch (error) {
+    console.error('Unable to read patients from storage', error);
+    patientRecords = [];
+  }
+  populatePatientSelect();
+  renderPatientList();
+};
+
+const savePatientsToStorage = async () => {
+  try {
+    // Save all patients to IndexedDB
+    for (const patient of patientRecords) {
+      await window.DB.put(window.DB.STORES.PATIENTS, patient);
+    }
+  } catch (error) {
+    console.error('Unable to persist patients to storage', error);
+  }
+};
+
+const populatePatientSelect = () => {
+  if (!patientSelect) return;
+  const currentValue = patientSelect.value;
+  patientSelect.innerHTML = '<option value="">--Select or add new patient--</option><option value="__new__">+ Add new patient</option>';
+  
+  patientRecords.forEach((patient) => {
+    const option = document.createElement('option');
+    option.value = patient.id;
+    const displayName = patient.maNumber 
+      ? `${patient.name} (${patient.maNumber})`
+      : patient.name;
+    option.textContent = displayName;
+    patientSelect.appendChild(option);
+  });
+  
+  if (currentValue && currentValue !== '__new__') {
+    patientSelect.value = currentValue;
+  }
+};
+
+const getPatientIncidents = (patientId) => {
+  return incidentRecords.filter((incident) => incident.patientId === patientId);
+};
+
+const calculateAgeFromDob = (dob) => {
+  if (!dob) return null;
+  const birthDate = new Date(dob);
+  if (Number.isNaN(birthDate.getTime())) return null;
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age;
+};
+
+const renderPatientList = () => {
+  if (!patientListContainer) return;
+  patientListContainer.innerHTML = '';
+  
+  const patientsToShow = filteredPatients.length ? filteredPatients : patientRecords;
+  
+  if (!patientsToShow.length) {
+    const empty = document.createElement('p');
+    empty.className = 'empty-state';
+    empty.textContent = patientRecords.length
+      ? 'No patients match your search.'
+      : 'No patients stored yet. Click "Add Patient" to create one.';
+    patientListContainer.appendChild(empty);
+    return;
+  }
+  
+  patientsToShow.forEach((patient) => {
+    const card = document.createElement('article');
+    card.className = 'patient-card';
+    card.dataset.patientId = patient.id;
+    
+    const header = document.createElement('div');
+    header.className = 'patient-card__header';
+    
+    const title = document.createElement('h4');
+    title.textContent = patient.name;
+    header.appendChild(title);
+    
+    const actions = document.createElement('div');
+    actions.className = 'patient-card__actions';
+    
+    const editButton = document.createElement('button');
+    editButton.type = 'button';
+    editButton.className = 'patient-card__action patient-card__action--edit';
+    editButton.textContent = 'Edit';
+    editButton.addEventListener('click', () => openPatientModal(patient.id));
+    actions.appendChild(editButton);
+    
+    const deleteButton = document.createElement('button');
+    deleteButton.type = 'button';
+    deleteButton.className = 'patient-card__action patient-card__action--delete';
+    deleteButton.textContent = 'Delete';
+    deleteButton.addEventListener('click', () => deletePatient(patient.id));
+    actions.appendChild(deleteButton);
+    
+    header.appendChild(actions);
+    card.appendChild(header);
+    
+    // Add patient image if exists
+    if (patient.imageId) {
+      (async () => {
+        const imageUrl = await window.DB.getImageUrl(patient.imageId);
+        if (imageUrl) {
+          const img = document.createElement('img');
+          img.className = 'patient-card__image';
+          img.src = imageUrl;
+          img.alt = `${patient.name} photo`;
+          card.insertBefore(img, card.firstChild);
+        }
+      })();
+    }
+    
+    const meta = document.createElement('div');
+    meta.className = 'patient-card__meta';
+    
+    if (patient.maNumber) {
+      const item = document.createElement('div');
+      item.className = 'patient-card__meta-item';
+      item.innerHTML = '<strong>MA Number:</strong> ' + patient.maNumber;
+      meta.appendChild(item);
+    }
+    
+    if (patient.unit) {
+      const item = document.createElement('div');
+      item.className = 'patient-card__meta-item';
+      item.innerHTML = '<strong>Unit:</strong> ' + patient.unit;
+      meta.appendChild(item);
+    }
+    
+    if (patient.dob) {
+      const item = document.createElement('div');
+      item.className = 'patient-card__meta-item';
+      const dobText = new Date(patient.dob).toLocaleDateString();
+      const age = calculateAgeFromDob(patient.dob);
+      const ageText = age !== null ? `${age} years` : '';
+      item.innerHTML = '<strong>DOB/Age:</strong> ' + [dobText, ageText].filter(Boolean).join(' / ');
+      meta.appendChild(item);
+    }
+    
+    if (patient.sex) {
+      const item = document.createElement('div');
+      item.className = 'patient-card__meta-item';
+      item.innerHTML = '<strong>Sex:</strong> ' + patient.sex.charAt(0).toUpperCase() + patient.sex.slice(1);
+      meta.appendChild(item);
+    }
+    
+    if (patient.allergies) {
+      const item = document.createElement('div');
+      item.className = 'patient-card__meta-item';
+      item.innerHTML = '<strong>Allergies:</strong> ' + patient.allergies;
+      meta.appendChild(item);
+    }
+    
+    if (patient.meds) {
+      const item = document.createElement('div');
+      item.className = 'patient-card__meta-item';
+      item.innerHTML = '<strong>Medications:</strong> ' + patient.meds;
+      meta.appendChild(item);
+    }
+    
+    if (patient.emergencyContact) {
+      const item = document.createElement('div');
+      item.className = 'patient-card__meta-item';
+      item.innerHTML = '<strong>Emergency Contact:</strong> ' + patient.emergencyContact;
+      meta.appendChild(item);
+    }
+    
+    if (meta.childElementCount) {
+      card.appendChild(meta);
+    }
+    
+    const incidents = getPatientIncidents(patient.id);
+    if (incidents.length > 0) {
+      const incidentsSection = document.createElement('div');
+      incidentsSection.className = 'patient-card__incidents';
+      
+      const title = document.createElement('div');
+      title.className = 'patient-card__incidents-title';
+      title.textContent = `Linked Incidents (${incidents.length})`;
+      incidentsSection.appendChild(title);
+      
+      const list = document.createElement('ul');
+      list.className = 'patient-card__incidents-list';
+      
+      incidents.slice(0, 5).forEach((incident) => {
+        const item = document.createElement('li');
+        item.className = 'patient-card__incident-item';
+        const link = document.createElement('a');
+        link.href = '#';
+        link.textContent = incident.incident?.label || 'Unspecified incident';
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          startEditingIncident(incident.id);
+          setActiveTab('add');
+        });
+        const date = incident.incidentTime?.label || formatTimestamp(incident.timestamp);
+        item.appendChild(link);
+        item.append(` — ${date}`);
+        list.appendChild(item);
+      });
+      
+      if (incidents.length > 5) {
+        const more = document.createElement('li');
+        more.className = 'patient-card__incident-item';
+        more.textContent = `... and ${incidents.length - 5} more`;
+        list.appendChild(more);
+      }
+      
+      incidentsSection.appendChild(list);
+      card.appendChild(incidentsSection);
+    }
+    
+    patientListContainer.appendChild(card);
+  });
+};
+
+const openPatientModal = async (patientId = null) => {
+  if (!patientModal) return;
+  
+  editingPatientId = patientId;
+  currentPatientImageId = null;
+  currentPatientImageBlob = null;
+  
+  if (patientId) {
+    const patient = patientRecords.find((p) => p.id === patientId);
+    if (!patient) {
+      pushToast('Patient not found.', { type: 'error' });
+      return;
+    }
+    
+    if (patientModalTitle) {
+      patientModalTitle.textContent = 'Edit Patient';
+    }
+    
+    patientFormName.value = patient.name || '';
+    patientFormMaNumber.value = patient.maNumber || '';
+    patientFormUnit.value = patient.unit || '';
+    patientFormDob.value = patient.dob || '';
+    patientFormSex.value = patient.sex || '';
+    patientFormAllergies.value = patient.allergies || '';
+    patientFormMeds.value = patient.meds || '';
+    patientFormMedicalHistory.value = patient.medicalHistory || '';
+    patientFormEmergencyContact.value = patient.emergencyContact || '';
+    
+    // Load patient image if exists
+    if (patient.imageId) {
+      currentPatientImageId = patient.imageId;
+      const imageUrl = await window.DB.getImageUrl(patient.imageId);
+      if (imageUrl) {
+        patientImagePreviewImg.src = imageUrl;
+        patientImagePreview.classList.remove('hidden');
+      }
+    } else {
+      patientImagePreview.classList.add('hidden');
+    }
+  } else {
+    if (patientModalTitle) {
+      patientModalTitle.textContent = 'Add Patient';
+    }
+    patientForm.reset();
+    patientImagePreview.classList.add('hidden');
+    if (patientFormImage) {
+      patientFormImage.value = '';
+    }
+  }
+  
+  patientModal.classList.remove('hidden');
+};
+
+const closePatientModal = () => {
+  if (!patientModal) return;
+  patientModal.classList.add('hidden');
+  editingPatientId = null;
+  currentPatientImageId = null;
+  currentPatientImageBlob = null;
+  patientForm.reset();
+  patientImagePreview.classList.add('hidden');
+  if (patientFormImage) {
+    patientFormImage.value = '';
+  }
+};
+
+const deletePatient = async (patientId) => {
+  const patient = patientRecords.find((p) => p.id === patientId);
+  if (!patient) {
+    pushToast('Patient not found.', { type: 'error' });
+    return;
+  }
+  
+  const incidents = getPatientIncidents(patientId);
+  if (incidents.length > 0) {
+    const confirmed = confirm(
+      `This patient has ${incidents.length} linked incident(s). Deleting will remove the patient link from those incidents. Continue?`
+    );
+    if (!confirmed) return;
+    
+    // Remove patient link from incidents
+    incidents.forEach((incident) => {
+      delete incident.patientId;
+    });
+    await saveIncidentsToStorage();
+  } else {
+    const confirmed = confirm('Delete this patient? This cannot be undone.');
+    if (!confirmed) return;
+  }
+  
+  // Delete patient image if exists
+  if (patient.imageId) {
+    try {
+      await window.DB.delete(window.DB.STORES.IMAGES, patient.imageId);
+    } catch (error) {
+      console.error('Error deleting patient image:', error);
+    }
+  }
+  
+  // Delete patient from IndexedDB
+  try {
+    await window.DB.delete(window.DB.STORES.PATIENTS, patientId);
+  } catch (error) {
+    console.error('Error deleting patient from IndexedDB:', error);
+  }
+  
+  patientRecords = patientRecords.filter((p) => p.id !== patientId);
+  await savePatientsToStorage();
+  populatePatientSelect();
+  renderPatientList();
+  pushToast('Patient deleted.', { type: 'success' });
+};
+
+if (patientForm) {
+  patientForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const patientData = {
+      name: patientFormName.value.trim(),
+      maNumber: patientFormMaNumber.value.trim(),
+      unit: patientFormUnit.value.trim(),
+      dob: patientFormDob.value || null,
+      sex: patientFormSex.value || null,
+      allergies: patientFormAllergies.value.trim() || null,
+      meds: patientFormMeds.value.trim() || null,
+      medicalHistory: patientFormMedicalHistory.value.trim() || null,
+      emergencyContact: patientFormEmergencyContact.value.trim() || null
+    };
+    
+    if (!patientData.name) {
+      pushToast('Patient name is required.', { type: 'error' });
+      return;
+    }
+    
+    // Handle image upload
+    let imageId = currentPatientImageId;
+    if (currentPatientImageBlob) {
+      // New image uploaded
+      if (currentPatientImageId && currentPatientImageId.startsWith('temp-')) {
+        // Delete old temp image if exists
+        try {
+          await window.DB.delete(window.DB.STORES.IMAGES, currentPatientImageId);
+        } catch (error) {
+          console.error('Error deleting old image:', error);
+        }
+      }
+      imageId = `patient-image-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
+      try {
+        await window.DB.saveImage(imageId, currentPatientImageBlob);
+        patientData.imageId = imageId;
+      } catch (error) {
+        console.error('Error saving image:', error);
+        pushToast('Error saving patient image.', { type: 'error' });
+        return;
+      }
+    } else if (currentPatientImageId && !currentPatientImageId.startsWith('temp-')) {
+      // Keep existing image
+      patientData.imageId = currentPatientImageId;
+    } else {
+      // No image
+      patientData.imageId = null;
+      // Delete old image if editing and image was removed
+      if (editingPatientId && currentPatientImageId) {
+        try {
+          await window.DB.delete(window.DB.STORES.IMAGES, currentPatientImageId);
+        } catch (error) {
+          console.error('Error deleting old image:', error);
+        }
+      }
+    }
+    
+    if (editingPatientId) {
+      const index = patientRecords.findIndex((p) => p.id === editingPatientId);
+      if (index !== -1) {
+        // Delete old image if it was replaced
+        const oldPatient = patientRecords[index];
+        if (oldPatient.imageId && oldPatient.imageId !== imageId) {
+          try {
+            await window.DB.delete(window.DB.STORES.IMAGES, oldPatient.imageId);
+          } catch (error) {
+            console.error('Error deleting old image:', error);
+          }
+        }
+        patientRecords[index] = {
+          ...patientRecords[index],
+          ...patientData,
+          updatedAt: new Date().toISOString()
+        };
+        pushToast('Patient updated.', { type: 'success' });
+      }
+    } else {
+      const newPatient = {
+        id: `patient-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
+        ...patientData,
+        createdAt: new Date().toISOString(),
+        updatedAt: null
+      };
+      patientRecords.push(newPatient);
+      pushToast('Patient added.', { type: 'success' });
+    }
+    
+    await savePatientsToStorage();
+    populatePatientSelect();
+    renderPatientList();
+    closePatientModal();
+  });
+}
+
+// Image upload handling
+if (patientImageUploadButton && patientFormImage) {
+  patientImageUploadButton.addEventListener('click', () => {
+    patientFormImage.click();
+  });
+  
+  patientFormImage.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file && file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        patientImagePreviewImg.src = event.target.result;
+        patientImagePreview.classList.remove('hidden');
+        currentPatientImageBlob = file;
+        currentPatientImageId = `temp-${Date.now()}`;
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+}
+
+if (patientImageRemoveButton) {
+  patientImageRemoveButton.addEventListener('click', () => {
+    patientImagePreview.classList.add('hidden');
+    patientImagePreviewImg.src = '';
+    if (patientFormImage) {
+      patientFormImage.value = '';
+    }
+    currentPatientImageBlob = null;
+    currentPatientImageId = null;
+  });
+}
+
+if (addPatientButton) {
+  addPatientButton.addEventListener('click', () => openPatientModal());
+}
+
+if (closePatientModalButton) {
+  closePatientModalButton.addEventListener('click', closePatientModal);
+}
+
+if (cancelPatientButton) {
+  cancelPatientButton.addEventListener('click', closePatientModal);
+}
+
+if (patientModal) {
+  const overlay = patientModal.querySelector('.settings-modal__overlay');
+  if (overlay) {
+    overlay.addEventListener('click', closePatientModal);
+  }
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !patientModal.classList.contains('hidden')) {
+      closePatientModal();
+    }
+  });
+}
+
+if (patientSelect) {
+  patientSelect.addEventListener('change', (e) => {
+    const value = e.target.value;
+    
+    if (value === '__new__') {
+      openPatientModal();
+      patientSelect.value = '';
+      return;
+    }
+    
+    if (value && value !== '') {
+      const patient = patientRecords.find((p) => p.id === value);
+      if (patient) {
+        patientNameInput.value = patient.name || '';
+        if (rosterNumberInput) {
+          rosterNumberInput.value = patient.maNumber || '';
+        }
+      }
+    } else {
+      patientNameInput.value = '';
+      if (rosterNumberInput) {
+        rosterNumberInput.value = '';
+      }
+    }
+  });
+}
+
+if (patientSearchInput) {
+  let patientSearchTimer;
+  patientSearchInput.addEventListener('input', () => {
+    clearTimeout(patientSearchTimer);
+    patientSearchTimer = setTimeout(() => {
+      const query = patientSearchInput.value.toLowerCase().trim();
+      if (!query) {
+        filteredPatients = [];
+      } else {
+        filteredPatients = patientRecords.filter((patient) => {
+          const searchText = [
+            patient.name,
+            patient.maNumber,
+            patient.unit,
+            patient.allergies,
+            patient.meds,
+            patient.emergencyContact
+          ]
+            .filter(Boolean)
+            .join(' ')
+            .toLowerCase();
+          return searchText.includes(query);
+        });
+      }
+      renderPatientList();
+    }, 250);
+  });
+}
+
+const exportPatients = () => {
+  const patientsToExport = filteredPatients.length ? filteredPatients : patientRecords;
+  if (!patientsToExport.length) {
+    pushToast('No patients to export.', { type: 'warning' });
+    return;
+  }
+  const exportPayload = {
+    exportedAt: new Date().toISOString(),
+    total: patientsToExport.length,
+    patients: patientsToExport
+  };
+  const data = JSON.stringify(exportPayload, null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `patients-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+  pushToast(`Exported ${patientsToExport.length} patient(s).`, { type: 'success' });
+};
+
+const importPatients = (file, importMode) => {
+  const reader = new FileReader();
+  
+  reader.onload = async (e) => {
+    try {
+      const fileContent = e.target.result;
+      const parsed = JSON.parse(fileContent);
+      
+      // Validate structure - check if it's the export format or just an array
+      let patientsToImport = [];
+      if (Array.isArray(parsed)) {
+        // Direct array of patients
+        patientsToImport = parsed;
+      } else if (parsed.patients && Array.isArray(parsed.patients)) {
+        // Export format with metadata
+        patientsToImport = parsed.patients;
+      } else {
+        pushToast('Invalid file format. Expected an array of patients or an export file.', { type: 'error' });
+        return;
+      }
+
+      if (!patientsToImport.length) {
+        pushToast('The file contains no patients to import.', { type: 'warning' });
+        return;
+      }
+
+      // Handle merge vs replace
+      if (importMode === 'replace') {
+        const confirmed = confirm(
+          `This will replace all ${patientRecords.length} existing patients with ${patientsToImport.length} imported patients. Continue?`
+        );
+        if (!confirmed) {
+          return;
+        }
+        patientRecords = patientsToImport;
+        pushToast(`Replaced all patients with ${patientsToImport.length} imported patient(s).`, { type: 'success' });
+      } else {
+        // Merge mode - add new patients, avoiding duplicates by ID
+        const existingIds = new Set(patientRecords.map((p) => p.id));
+        const newPatients = patientsToImport.filter((patient) => !existingIds.has(patient.id));
+        const duplicateCount = patientsToImport.length - newPatients.length;
+        
+        if (newPatients.length === 0) {
+          pushToast(
+            `All ${patientsToImport.length} patients in the file already exist. No new patients imported.`,
+            { type: 'warning' }
+          );
+          return;
+        }
+
+        patientRecords.push(...newPatients);
+        
+        if (duplicateCount > 0) {
+          pushToast(
+            `Imported ${newPatients.length} new patients. ${duplicateCount} duplicate(s) skipped.`,
+            { type: 'info', duration: 5000 }
+          );
+        } else {
+          pushToast(
+            `Successfully imported ${newPatients.length} patient(s).`,
+            { type: 'success' }
+          );
+        }
+      }
+
+      // Save to storage and refresh UI
+      await savePatientsToStorage();
+      populatePatientSelect();
+      renderPatientList();
+
+      // Reset file input
+      if (importPatientsFileInput) {
+        importPatientsFileInput.value = '';
+      }
+      if (importPatientsButton) {
+        importPatientsButton.disabled = true;
+      }
+      if (importPatientsFileInput?.nextElementSibling?.querySelector('span')) {
+        importPatientsFileInput.nextElementSibling.querySelector('span').textContent = 'Choose JSON file';
+      }
+    } catch (error) {
+      console.error('Error importing patients:', error);
+      pushToast('Failed to import patients. The file may be corrupted or invalid JSON.', { type: 'error' });
+    }
+  };
+
+  reader.onerror = () => {
+    pushToast('Failed to read the file. Please try again.', { type: 'error' });
+  };
+
+  reader.readAsText(file);
+};
+
+if (exportPatientsButton) {
+  exportPatientsButton.addEventListener('click', () => {
+    exportPatients();
+  });
+}
+
+if (importPatientsFileInput) {
+  importPatientsFileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (importPatientsButton) {
+        importPatientsButton.disabled = false;
+      }
+      if (importPatientsFileInput.nextElementSibling?.querySelector('span')) {
+        importPatientsFileInput.nextElementSibling.querySelector('span').textContent = file.name;
+      }
+    } else {
+      if (importPatientsButton) {
+        importPatientsButton.disabled = true;
+      }
+      if (importPatientsFileInput?.nextElementSibling?.querySelector('span')) {
+        importPatientsFileInput.nextElementSibling.querySelector('span').textContent = 'Choose JSON file';
+      }
+    }
+  });
+}
+
+if (importPatientsButton) {
+  importPatientsButton.addEventListener('click', () => {
+    const file = importPatientsFileInput?.files[0];
+    if (!file) {
+      pushToast('Please select a file to import.', { type: 'warning' });
+      return;
+    }
+
+    const importMode = document.querySelector('input[name="importPatientsMode"]:checked')?.value || 'merge';
+    importPatients(file, importMode);
+  });
+}
+
 const followUpOptionLabels = new Map();
 followUpOptionWrappers.forEach((wrapper, value) => {
   const labelText = wrapper?.querySelector('span')?.textContent?.trim() || '';
@@ -233,6 +1301,9 @@ const resetFormState = () => {
   if (currentStatusSelect) {
     currentStatusSelect.value = 'active';
   }
+  if (patientSelect) {
+    patientSelect.value = '';
+  }
   workplaceCheckbox.checked = false;
   workplaceWarning.classList.add('hidden');
   followUpWarning.classList.add('hidden');
@@ -286,6 +1357,13 @@ const startEditingIncident = (recordId) => {
   incidentType.value = record.incident?.value || '';
   updateFieldVisibility(incidentType.value);
 
+  // Set patient select if patient is linked
+  if (record.patientId && patientSelect) {
+    patientSelect.value = record.patientId;
+  } else if (patientSelect) {
+    patientSelect.value = '';
+  }
+  
   patientNameInput.value = record.patientName || '';
   rosterNumberInput.value = record.rosterNumber || '';
 
@@ -799,7 +1877,7 @@ const downloadIncidents = () => {
   URL.revokeObjectURL(url);
 };
 
-const clearIncidents = () => {
+const clearIncidents = async () => {
   if (!incidentRecords.length) {
     pushToast('No stored incidents to clear.', { type: 'warning' });
     return;
@@ -808,15 +1886,19 @@ const clearIncidents = () => {
   if (!confirmed) {
     return;
   }
+  try {
+    await window.DB.clear(window.DB.STORES.INCIDENTS);
+  } catch (error) {
+    console.error('Error clearing incidents from IndexedDB:', error);
+  }
   incidentRecords = [];
-  saveIncidentsToStorage();
   renderDashboard();
   exitEditingMode({ notify: false, resetForm: true });
   clearFilters();
   pushToast('All stored incidents cleared from this browser.', { type: 'success' });
 };
 
-const deleteIncident = (recordId) => {
+const deleteIncident = async (recordId) => {
   const index = incidentRecords.findIndex((record) => record.id === recordId);
   if (index === -1) {
     pushToast('Incident not found.', { type: 'error' });
@@ -826,8 +1908,12 @@ const deleteIncident = (recordId) => {
   if (!confirmed) {
     return;
   }
+  try {
+    await window.DB.delete(window.DB.STORES.INCIDENTS, recordId);
+  } catch (error) {
+    console.error('Error deleting incident from IndexedDB:', error);
+  }
   incidentRecords.splice(index, 1);
-  saveIncidentsToStorage();
   updateDispositionFilterOptions();
   applyFilters();
   renderDashboard();
@@ -911,6 +1997,8 @@ const setActiveTab = (tabId = 'add') => {
     renderIncidentList(filteredRecords.length ? filteredRecords : incidentRecords.slice().reverse());
   } else if (tabId === 'dashboard') {
     renderDashboard();
+  } else if (tabId === 'patients') {
+    renderPatientList();
   } else if (tabId === 'guide') {
     renderGuideResults();
   }
@@ -1857,8 +2945,10 @@ const prolongedCareEligibleIncidents = new Set([
   ...seriousIncidents
 ]);
 
-const collectIncidentData = () => {
-  const contextLabel = operationalContext.options[operationalContext.selectedIndex]?.textContent?.trim() || operationalContext.value;
+const collectIncidentData = (militaryEnabled = true) => {
+  const contextLabel = militaryEnabled && operationalContext
+    ? (operationalContext.options[operationalContext.selectedIndex]?.textContent?.trim() || operationalContext.value)
+    : 'Peacetime / garrison operations';
   const categoryLabel = incidentCategory.selectedIndex > 0
     ? incidentCategory.options[incidentCategory.selectedIndex].textContent
     : incidentCategory.value;
@@ -1901,9 +2991,12 @@ const collectIncidentData = () => {
   return {
     id: `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
     timestamp: new Date().toISOString(),
-    context: {
+    context: militaryEnabled ? {
       value: operationalContext.value,
       label: contextLabel
+    } : {
+      value: 'peace',
+      label: 'Peacetime / garrison operations'
     },
     category: {
       value: incidentCategory.value,
@@ -1914,7 +3007,8 @@ const collectIncidentData = () => {
       label: incidentLabel
     },
     patientName: patientNameInput.value.trim(),
-    rosterNumber: rosterNumberInput.value.trim(),
+    rosterNumber: militaryEnabled ? rosterNumberInput.value.trim() : '',
+    patientId: patientSelect?.value && patientSelect.value !== '__new__' ? patientSelect.value : null,
     incidentTime: {
       value: incidentTimeISO,
       label: incidentTimeLabel,
@@ -2118,6 +3212,19 @@ const applyTreatmentQuickAction = (label) => {
   treatmentInput.focus();
 };
 
+const applyPatientFormQuickAction = (targetId, value) => {
+  const target = document.getElementById(targetId);
+  if (!target) return;
+  const currentValue = target.value.trim();
+  if (!currentValue) {
+    target.value = value;
+  } else if (!currentValue.includes(value)) {
+    // Append with comma separation for better readability
+    target.value = `${currentValue}, ${value}`;
+  }
+  target.focus();
+};
+
 const hintButtons = document.querySelectorAll('.field-hints button');
 
 hintButtons.forEach((button) => {
@@ -2126,7 +3233,14 @@ hintButtons.forEach((button) => {
     if (!container) return;
     const targetKey = container.dataset.for;
     const value = button.dataset.value ?? button.textContent.trim();
-    applyHintValue(targetKey, value);
+    
+    // Check if this is a patient form textarea (allergies or medications)
+    if (targetKey === 'patientFormAllergies' || targetKey === 'patientFormMeds') {
+      applyPatientFormQuickAction(targetKey, value);
+    } else {
+      // For other fields (vitals, etc.), use the standard approach
+      applyHintValue(targetKey, value);
+    }
   });
 });
 
@@ -2332,7 +3446,7 @@ incidentType.addEventListener('change', () => {
 
 updateFollowUpContextVisibility();
 
-form.addEventListener('submit', (e) => {
+form.addEventListener('submit', async (e) => {
   e.preventDefault();
 
   const errors = [];
@@ -2347,7 +3461,8 @@ form.addEventListener('submit', (e) => {
       errors.push('Record the patient name or identifier.');
     }
 
-    if (!rosterNumberInput.value.trim()) {
+    const militaryEnabled = await getMilitaryFeaturesEnabled();
+    if (militaryEnabled && !rosterNumberInput.value.trim()) {
       errors.push('Provide the roster / MA number.');
     }
 
@@ -2470,7 +3585,8 @@ form.addEventListener('submit', (e) => {
   }
 
   const isEditing = Boolean(editingRecordId);
-  const record = collectIncidentData();
+  const militaryEnabled = await getMilitaryFeaturesEnabled();
+  const record = collectIncidentData(militaryEnabled);
 
   if (isEditing) {
     const targetIndex = incidentRecords.findIndex((item) => item.id === editingRecordId);
@@ -2488,7 +3604,7 @@ form.addEventListener('submit', (e) => {
     incidentRecords.push(record);
   }
 
-  saveIncidentsToStorage();
+  await saveIncidentsToStorage();
   renderDashboard();
 
   pushToast(isEditing ? 'Incident updated.' : 'Incident saved locally.', { type: 'success' });
@@ -2499,13 +3615,26 @@ form.addEventListener('submit', (e) => {
   setActiveTab('view');
 });
 
-setIncidentTypeOptions('');
-updateFieldVisibility(incidentType.value);
-loadIncidentsFromStorage();
-clearFilters();
-populateGuideCategories();
-renderGuideResults();
-setActiveTab('add');
+// Initialize IndexedDB and migrate data
+(async () => {
+  try {
+    await window.DB.openDB();
+    await window.DB.migrateFromLocalStorage();
+    
+    setIncidentTypeOptions('');
+    updateFieldVisibility(incidentType.value);
+    await loadIncidentsFromStorage();
+    await loadPatientsFromStorage();
+    clearFilters();
+    populateGuideCategories();
+    renderGuideResults();
+    setActiveTab('add');
+    await initializeSettings();
+  } catch (error) {
+    console.error('Error initializing database:', error);
+    pushToast('Error initializing storage. Some features may not work.', { type: 'error' });
+  }
+})();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
